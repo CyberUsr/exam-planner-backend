@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  redis:
+    container_name: exam-planner-redis
+    image: redis
+    ports:
+      - 6378:6379 # Port schimbat pentru securitate
+    volumes:
+      - redis-examplanner-data:/data
+    networks:
+      - exam-planner
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      retries: 3
+      timeout: 5s
+
+  postgres:
+    container_name: exam-planner-db
+    image: postgres
+    ports:
+      - 5444:5432 # Port schimbat pentru securitate
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres-examplanner-data:/var/lib/postgresql/data
+    networks:
+      - exam-planner
+
+networks:
+  exam-planner:
+    driver: bridge
+
+volumes:
+  redis-examplanner-data:
+    driver: local
+  postgres-examplanner-data:
+    driver: local
