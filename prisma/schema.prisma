@@ -13,9 +13,64 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Student {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
+model Dati {
+  id_date String   @id
+  data    DateTime
+  ora     DateTime
+  Materii Materii[]
+}
+
+model Profesori {
+  id_profesor String  @id
+  nume        String
+  prenume     String
+  id_materie  String?
+  Materie     Materii? @relation(fields: [id_materie], references: [id_materie])
+  Cereri      Cereri[]
+}
+
+model Studenti {
+  id_student String  @id
+  grupa      String
+  anul       Int
+  nume       String
+  prenume    String
+  program    String
+  Cereri     Cereri[]
+}
+
+model Sali {
+  id_sala   String   @id
+  nume_sala String
+  Materii   Materii[]
+  Cereri    Cereri[]
+}
+
+model Cereri {
+  id_cerere   String   @id
+  id_profesor String
+  id_student  String
+  id_materie  String
+  id_sala     String
+
+  Profesor Profesori @relation(fields: [id_profesor], references: [id_profesor])
+  Student  Studenti  @relation(fields: [id_student], references: [id_student])
+  Materie  Materii   @relation(fields: [id_materie], references: [id_materie])
+  Sala     Sali      @relation(fields: [id_sala], references: [id_sala])
+}
+
+model Materii {
+  id_materie String @id
+  nume_materie String
+  id_date   String
+  id_sala   String
+
+  Date Dati @relation(fields: [id_date], references: [id_date])
+  Sala Sali @relation(fields: [id_sala], references: [id_sala])
+  Profesori Profesori[]
+  Cereri    Cereri[]
+}
+
+model Admin {
+  id_admin String @id
 }
