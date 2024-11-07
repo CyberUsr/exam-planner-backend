@@ -1,76 +1,94 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Prisma Schema for University Database System
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // or your database provider
   url      = env("DATABASE_URL")
 }
 
-model Dati {
-  id_date String   @id
-  data    DateTime
-  ora     DateTime
-  Materii Materii[]
-}
-
 model Profesori {
-  id_profesor String  @id
-  nume        String
-  prenume     String
-  id_materie  String?
-  Materie     Materii? @relation(fields: [id_materie], references: [id_materie])
-  Cereri      Cereri[]
+  id_profesor    String     @id
+  nume           String
+  prenume        String
+  email          String
+  specializare   String
+  id_departament String
+  departamente   Departamente @relation(fields: [id_departament], references: [id_departament])
+
+  CereriLegatura CereriLegatura[]
 }
 
 model Studenti {
-  id_student String  @id
-  grupa      String
-  anul       Int
-  nume       String
-  prenume    String
-  program    String
-  Cereri     Cereri[]
+  id_student     String     @id
+  grupa          String
+  anul           Int
+  nume           String
+  prenume        String
+  specializare   String
+
+  CereriLegatura CereriLegatura[]
 }
 
 model Sali {
-  id_sala   String   @id
-  nume_sala String
-  Materii   Materii[]
-  Cereri    Cereri[]
+  id_sala        String     @id
+  nume_sala      String
+  stare          String
+  id_departament String
+  departamente   Departamente @relation(fields: [id_departament], references: [id_departament])
+
+  ExameneSali    ExameneSali[]
 }
 
 model Cereri {
-  id_cerere   String   @id
-  id_profesor String
-  id_student  String
-  id_materie  String
-  id_sala     String
+  id_cerere      String     @id
+  id_user        String
+  id_examene_sali String
+  data           DateTime
+  ora            DateTime
 
-  Profesor Profesori @relation(fields: [id_profesor], references: [id_profesor])
-  Student  Studenti  @relation(fields: [id_student], references: [id_student])
-  Materie  Materii   @relation(fields: [id_materie], references: [id_materie])
-  Sala     Sali      @relation(fields: [id_sala], references: [id_sala])
+  ExameneSali    ExameneSali @relation(fields: [id_examene_sali], references: [id_examene_sali])
+  CereriLegatura CereriLegatura[]
 }
 
-model Materii {
-  id_materie String @id
-  nume_materie String
-  id_date   String
-  id_sala   String
+model Examene {
+  id_examene     String     @id
+  nume_materie   String
+  data           DateTime
+  ora            DateTime
+  tip_evaluare   String
+  actualizatDe   String
+  actualizatLa   DateTime
 
-  Date Dati @relation(fields: [id_date], references: [id_date])
-  Sala Sali @relation(fields: [id_sala], references: [id_sala])
-  Profesori Profesori[]
-  Cereri    Cereri[]
+  ExameneSali    ExameneSali[]
 }
 
-model Admin {
-  id_admin String @id
+model Departamente {
+  id_departament String     @id
+  nume_departament String
+
+  Profesori      Profesori[]
+  Sali           Sali[]
+}
+
+model ExameneSali {
+  id_examene_sali String     @id
+  id_examene      String
+  id_sala         String
+  examene         Examene    @relation(fields: [id_examene], references: [id_examene])
+  sala            Sali       @relation(fields: [id_sala], references: [id_sala])
+  Cereri          Cereri[]
+}
+
+model CereriLegatura {
+  id_legatura     String     @id
+  id_cerere       String
+  id_student      String
+  id_profesor     String
+
+  cereri          Cereri     @relation(fields: [id_cerere], references: [id_cerere])
+  student         Studenti   @relation(fields: [id_student], references: [id_student])
+  profesor        Profesori  @relation(fields: [id_profesor], references: [id_profesor])
 }
