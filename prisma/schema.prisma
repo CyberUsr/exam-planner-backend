@@ -46,8 +46,10 @@ model Sali {
   ExameneSali    ExameneSali[]
 }
 
+
+
 model Cereri {
-  id_cerere      String     @id
+  id_cerere      String   @id @default(uuid())
   id_user        String
   id_examene_sali String
   data           DateTime
