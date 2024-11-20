@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Param, Body, Put, Delete } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Put,
+  Delete,
+} from '@nestjs/common';
 import { CereriService } from './cereri.service';
 import { Cereri } from '@prisma/client';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
@@ -59,7 +68,10 @@ export class CereriController {
       },
     },
   })
-  async updateCerere(@Param('id') id_cerere: string, @Body() data: Partial<Cereri>) {
+  async updateCerere(
+    @Param('id') id_cerere: string,
+    @Body() data: Partial<Cereri>,
+  ) {
     return this.cereriService.updateCerere(id_cerere, data);
   }
 
