@@ -8,8 +8,10 @@ import { DepartamenteModule } from './departamente/departamente.module';
 import { CereriModule } from './cereri/cereri.module';
 import { ExamenesaliModule } from './examenesali/examenesali.module';
 import { CererilegaturaModule } from './cererilegatura/cererilegatura.module';
+import { AuthModule } from './auth/auth.module';
+
 
 @Module({
-  imports: [PrismaModule, ProfesoriModule, StudentiModule, SaliModule, ExameneModule, DepartamenteModule, CereriModule, ExamenesaliModule, CererilegaturaModule],
+  imports: [PrismaModule, ProfesoriModule, StudentiModule, SaliModule, ExameneModule, DepartamenteModule, CereriModule, ExamenesaliModule, CererilegaturaModule, AuthModule],
 })
 export class AppModule {}
