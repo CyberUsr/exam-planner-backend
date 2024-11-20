@@ -54,33 +54,37 @@ export class ProfesoriService {
 
   async populateProfesori(): Promise<string> {
     const url = 'https://orar.usv.ro/orar/vizualizare/data/cadre.php?json';
-    const defaultDepartmentId = 'default-dep'; // Replace with an actual department ID in your database
+    const defaultDepartmentId = 'default-dep'; // Default department ID
+    const defaultFacultyName = 'Default Faculty'; // Default faculty name
 
     try {
-      // Fetch data from external URL
+      // Fetch data from the external URL
       const response = await axios.get(url);
       const data = response.data;
 
       // Iterate over the fetched data and populate the Profesori table
       for (const item of data) {
-        const { id, lastName, firstName } = item;
+        const { id, lastName, firstName, facultyName } = item;
 
         // Skip invalid records
         if (!id || !lastName || !firstName) {
           continue;
         }
 
-        // Check if department exists (for simplicity, using the default department)
-        const departmentExists = await this.prisma.departamente.findUnique({
-          where: { id_departament: defaultDepartmentId },
+        // Use facultyName or assign default
+        const faculty = facultyName || defaultFacultyName;
+        const departmentId = faculty.replace(/\s+/g, '-').toLowerCase(); // Generate a unique ID for each faculty
+
+        // Ensure the department exists
+        let department = await this.prisma.departamente.findUnique({
+          where: { id_departament: departmentId },
         });
 
-        if (!departmentExists) {
-          // Create the default department if it doesn't exist
-          await this.prisma.departamente.create({
+        if (!department) {
+          department = await this.prisma.departamente.create({
             data: {
-              id_departament: defaultDepartmentId,
-              nume_departament: 'Default Department',
+              id_departament: departmentId,
+              nume_departament: faculty, // Use faculty name as department name
             },
           });
         }
@@ -91,17 +95,17 @@ export class ProfesoriService {
           update: {
             nume: lastName.trim(),
             prenume: firstName.trim(),
-            id_departament: defaultDepartmentId,
             email: `${firstName.trim().toLowerCase()}.${lastName.trim().toLowerCase()}@example.com`, // Example email
             specializare: 'General', // Default specialization
+            id_departament: department.id_departament, // Link to the department
           },
           create: {
             id_profesor: id,
             nume: lastName.trim(),
             prenume: firstName.trim(),
-            id_departament: defaultDepartmentId,
             email: `${firstName.trim().toLowerCase()}.${lastName.trim().toLowerCase()}@example.com`, // Example email
             specializare: 'General', // Default specialization
+            id_departament: department.id_departament, // Link to the department
           },
         });
       }
