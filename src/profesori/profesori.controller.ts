@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Param, Body, Put, Delete } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Put,
+  Delete,
+} from '@nestjs/common';
 import { ProfesoriService } from './profesori.service';
 import { Profesori } from '@prisma/client';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
@@ -7,6 +16,11 @@ import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 @Controller('profesori')
 export class ProfesoriController {
   constructor(private readonly profesoriService: ProfesoriService) {}
+
+  @Post('populate')
+  async populateProfesori() {
+    return this.profesoriService.populateProfesori();
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get all professors' })
@@ -56,7 +70,10 @@ export class ProfesoriController {
       },
     },
   })
-  async updateProfesor(@Param('id') id_profesor: string, @Body() data: Partial<Profesori>) {
+  async updateProfesor(
+    @Param('id') id_profesor: string,
+    @Body() data: Partial<Profesori>,
+  ) {
     return this.profesoriService.updateProfesor(id_profesor, data);
   }
 

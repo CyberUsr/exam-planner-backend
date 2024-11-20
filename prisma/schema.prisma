@@ -20,6 +20,7 @@ model Profesori {
   email          String
   specializare   String
   id_departament String
+  facultate      String 
   departamente   Departamente @relation(fields: [id_departament], references: [id_departament])
 
   CereriLegatura CereriLegatura[]
