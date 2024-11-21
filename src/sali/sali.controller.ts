@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Param, Body, Put, Delete } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Put,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { SaliService } from './sali.service';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 import { Sali } from '@prisma/client';
@@ -11,6 +21,14 @@ export class SaliController {
   @Post('populate')
   async populateSali() {
     return this.saliService.populateSali();
+  }
+
+  @Get()
+  async getSali(@Query('buildingName') buildingName: string) {
+    if (buildingName) {
+      return this.saliService.getSaliByBuilding(buildingName);
+    }
+    return this.saliService.getAllSali();
   }
   // Get all rooms
   @Get()
@@ -47,9 +65,7 @@ export class SaliController {
       },
     },
   })
-  async createSala(
-    @Body() data: Omit<Sali, 'id_sala'>,
-  ): Promise<Sali> {
+  async createSala(@Body() data: Omit<Sali, 'id_sala'>): Promise<Sali> {
     return this.saliService.createSala(data);
   }
 

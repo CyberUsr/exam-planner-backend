@@ -61,7 +61,7 @@ model Cereri {
 }
 
 model Examene {
-  id_examene     String     @id
+  id_examene   String    @id @default(uuid()) // Auto-generate UUID
   nume_materie   String
   data           DateTime
   ora            DateTime
