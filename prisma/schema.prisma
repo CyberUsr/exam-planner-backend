@@ -37,14 +37,15 @@ model Studenti {
 }
 
 model Sali {
-  id_sala        String     @id
-  nume_sala      String
-  stare          String
-  id_departament String
-  departamente   Departamente @relation(fields: [id_departament], references: [id_departament])
+  id_sala        String     @id @default(uuid())
+  nume           String
+  shortName      String
+  buildingName   String
+
 
   ExameneSali    ExameneSali[]
 }
+
 
 
 
@@ -76,7 +77,7 @@ model Departamente {
   nume_departament String
 
   Profesori      Profesori[]
-  Sali           Sali[]
+ 
 }
 
 model ExameneSali {
