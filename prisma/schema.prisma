@@ -81,7 +81,7 @@ model Departamente {
 }
 
 model ExameneSali {
-  id_examene_sali String     @id
+  id_examene_sali String      @id @default(uuid())
   id_examene      String
   id_sala         String
   examene         Examene    @relation(fields: [id_examene], references: [id_examene])
