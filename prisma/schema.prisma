@@ -61,7 +61,7 @@ model Cereri {
 }
 
 model Examene {
-  id_examene     String     @id
+  id_examene   String    @id @default(uuid()) // Auto-generate UUID
   nume_materie   String
   data           DateTime
   ora            DateTime
@@ -81,7 +81,7 @@ model Departamente {
 }
 
 model ExameneSali {
-  id_examene_sali String     @id
+  id_examene_sali String      @id @default(uuid())
   id_examene      String
   id_sala         String
   examene         Examene    @relation(fields: [id_examene], references: [id_examene])

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ExameneSali } from '@prisma/client';
@@ -18,7 +19,9 @@ export class ExameneSaliService {
   }
 
   // Get a specific examene-sali record by ID
-  async getExameneSaliById(id_examene_sali: string): Promise<ExameneSali | null> {
+  async getExameneSaliById(
+    id_examene_sali: string,
+  ): Promise<ExameneSali | null> {
     const exameneSali = await this.prisma.exameneSali.findUnique({
       where: { id_examene_sali },
       include: {
@@ -28,13 +31,17 @@ export class ExameneSaliService {
       },
     });
     if (!exameneSali) {
-      throw new NotFoundException(`ExameneSali with ID ${id_examene_sali} not found.`);
+      throw new NotFoundException(
+        `ExameneSali with ID ${id_examene_sali} not found.`,
+      );
     }
     return exameneSali;
   }
 
   // Create a new examene-sali record
-  async createExameneSali(data: ExameneSali): Promise<ExameneSali> {
+  async createExameneSali(
+    data: Omit<ExameneSali, 'id_examene_sali'>,
+  ): Promise<ExameneSali> {
     return this.prisma.exameneSali.create({
       data,
       include: {
@@ -46,10 +53,17 @@ export class ExameneSaliService {
   }
 
   // Update an existing examene-sali record
-  async updateExameneSali(id_examene_sali: string, data: Partial<ExameneSali>): Promise<ExameneSali> {
-    const existingExameneSali = await this.prisma.exameneSali.findUnique({ where: { id_examene_sali } });
+  async updateExameneSali(
+    id_examene_sali: string,
+    data: Partial<ExameneSali>,
+  ): Promise<ExameneSali> {
+    const existingExameneSali = await this.prisma.exameneSali.findUnique({
+      where: { id_examene_sali },
+    });
     if (!existingExameneSali) {
-      throw new NotFoundException(`ExameneSali with ID ${id_examene_sali} not found.`);
+      throw new NotFoundException(
+        `ExameneSali with ID ${id_examene_sali} not found.`,
+      );
     }
 
     return this.prisma.exameneSali.update({
@@ -65,9 +79,13 @@ export class ExameneSaliService {
 
   // Delete an examene-sali record by ID
   async deleteExameneSali(id_examene_sali: string): Promise<ExameneSali> {
-    const existingExameneSali = await this.prisma.exameneSali.findUnique({ where: { id_examene_sali } });
+    const existingExameneSali = await this.prisma.exameneSali.findUnique({
+      where: { id_examene_sali },
+    });
     if (!existingExameneSali) {
-      throw new NotFoundException(`ExameneSali with ID ${id_examene_sali} not found.`);
+      throw new NotFoundException(
+        `ExameneSali with ID ${id_examene_sali} not found.`,
+      );
     }
 
     return this.prisma.exameneSali.delete({
