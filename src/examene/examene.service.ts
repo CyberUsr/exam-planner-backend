@@ -41,7 +41,9 @@ export class ExameneService {
 
   // Update an existing exam
   async updateExam(id_exam: string, data: Partial<Examene>): Promise<Examene> {
-    // Check if the exam exists
+    console.log('Received data for update:', data);
+
+    // Ensure the exam exists
     const existingExam = await this.prisma.examene.findUnique({
       where: { id_examene: id_exam },
     });
@@ -50,12 +52,16 @@ export class ExameneService {
     }
 
     // Update the exam record
-    return this.prisma.examene.update({
-      where: { id_examene: id_exam },
-      data,
-    });
+    try {
+      return await this.prisma.examene.update({
+        where: { id_examene: id_exam },
+        data,
+      });
+    } catch (error) {
+      console.error('Error updating exam in database:', error);
+      throw new Error('Failed to update exam.');
+    }
   }
-
   // Delete an exam by ID
   async deleteExam(id_exam: string): Promise<Examene> {
     // Check if the exam exists
