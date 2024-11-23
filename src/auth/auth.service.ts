@@ -3,6 +3,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { Role } from '@prisma/client'; // Import the generated Role enum
 
 @Injectable()
 export class AuthService {
@@ -14,11 +15,18 @@ export class AuthService {
   async register(email: string, password: string) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Automatically determine if the user is a professor
-    const isProfesor = email.endsWith('@usm.ro');
+    // Automatically determine the role based on the email domain
+    let role: Role = Role.Student; // Default role
+    if (email.endsWith('@usm.ro')) {
+      role = Role.Profesor;
+    } else if (email.endsWith('@secretariat.usm.ro')) {
+      role = Role.Secretariat;
+    } else if (email.endsWith('@admin.usm.ro')) {
+      role = Role.Admin; // Special case for admin
+    }
 
     const user = await this.prisma.user.create({
-      data: { email, password: hashedPassword, isProfesor },
+      data: { email, password: hashedPassword, role },
     });
 
     return { message: 'User registered successfully!', user };
@@ -31,18 +39,15 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    // Automatically check if the email domain corresponds to a professor
-    const isProfesor = email.endsWith('@usm.ro');
-
     const token = this.jwtService.sign({
       userId: user.id,
-      isProfesor, // Include this in the token payload if necessary
+      role: user.role, // Include role in the token payload
     });
 
     return {
       message: 'Logged in successfully!',
       token,
-      user: { email: user.email, isProfesor }, // Return this for client awareness
+      user: { email: user.email, role: user.role }, // Return role for client awareness
     };
   }
 }

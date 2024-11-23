@@ -7,12 +7,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id       Int     @id @default(autoincrement())
-  email    String  @unique
-  password String
-  isProfesor Boolean @default(false) // Default is student; professors will have this set to true
+enum Role {
+  Student
+  Profesor
+  Secretariat
+  Admin
 }
+
+model User {
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String
+  role     Role   @default(Student) // Default role is Student
+}
+
 
 
 model Profesori {
