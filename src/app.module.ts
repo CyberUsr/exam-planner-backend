@@ -9,9 +9,10 @@ import { CereriModule } from './cereri/cereri.module';
 import { ExamenesaliModule } from './examenesali/examenesali.module';
 import { CererilegaturaModule } from './cererilegatura/cererilegatura.module';
 import { AuthModule } from './auth/auth.module';
+import { GrupeModule } from './grupe/grupe.module';
 
 
 @Module({
-  imports: [PrismaModule, ProfesoriModule, StudentiModule, SaliModule, ExameneModule, DepartamenteModule, CereriModule, ExamenesaliModule, CererilegaturaModule, AuthModule],
+  imports: [PrismaModule, ProfesoriModule, StudentiModule, SaliModule, ExameneModule, DepartamenteModule, CereriModule, ExamenesaliModule, CererilegaturaModule, AuthModule, GrupeModule],
 })
 export class AppModule {}

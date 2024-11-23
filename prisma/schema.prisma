@@ -73,12 +73,28 @@ model Examene {
 }
 
 model Departamente {
-  id_departament String     @id
-  nume_departament String
+  id_departament     String   @id
+  nume_departament   String
 
-  Profesori      Profesori[]
+  Profesori          Profesori[]
  
 }
+
+model Grupe {
+  id                       String  @id @default(uuid())
+  type                     String
+  facultyId                String
+  specializationShortName  String
+  studyYear                String
+  groupName                String?
+  subgroupIndex            String?
+  isModular                String
+  orarId                   String
+}
+
+
+
+
 
 model ExameneSali {
   id_examene_sali String      @id @default(uuid())
