@@ -11,7 +11,9 @@ model User {
   id       Int     @id @default(autoincrement())
   email    String  @unique
   password String
+  isProfesor Boolean @default(false) // Default is student; professors will have this set to true
 }
+
 
 model Profesori {
   id_profesor    String     @id
