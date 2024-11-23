@@ -15,7 +15,15 @@ export class GrupeService {
   constructor(private prisma: PrismaService) {}
 
   async getAllGrupe(): Promise<Grupe[]> {
-    return this.prisma.grupe.findMany();
+    const allGrupe = await this.prisma.grupe.findMany();
+
+    // Filter to keep only unique group names
+    const uniqueGrupe = allGrupe.filter(
+      (grupe, index, self) =>
+        index === self.findIndex((g) => g.groupName === grupe.groupName),
+    );
+
+    return uniqueGrupe;
   }
 
   async getGrupeById(id: string): Promise<Grupe | null> {
@@ -67,11 +75,11 @@ export class GrupeService {
 
   async populateGrupe(): Promise<string> {
     const url = 'https://orar.usv.ro/orar/vizualizare/data/subgrupe.php?json';
-  
+
     try {
       const response = await axios.get(url);
       const data = response.data;
-  
+
       for (const item of data) {
         const {
           id,
@@ -84,13 +92,20 @@ export class GrupeService {
           isModular,
           orarId,
         } = item;
-  
+
         // Skip invalid records
-        if (!id || !type || !facultyId || !specializationShortName || !studyYear || !orarId) {
+        if (
+          !id ||
+          !type ||
+          !facultyId ||
+          !specializationShortName ||
+          !studyYear ||
+          !orarId
+        ) {
           console.warn('Skipping invalid record:', item);
           continue;
         }
-  
+
         // Sanitize data to match Prisma schema
         const sanitizedData = {
           id: id.toString(),
@@ -98,15 +113,16 @@ export class GrupeService {
           facultyId: facultyId.toString(),
           specializationShortName: specializationShortName.toString(),
           studyYear: studyYear.toString(),
-          groupName: groupName && groupName !== '_' ? groupName.toString() : null,
+          groupName:
+            groupName && groupName !== '_' ? groupName.toString() : null,
           subgroupIndex: subgroupIndex ? subgroupIndex.toString() : null,
           isModular: isModular.toString(),
           orarId: orarId.toString(),
         };
-  
+
         // Debug: log sanitized data
         console.log('Processing record:', sanitizedData);
-  
+
         // Insert or update the record in the database
         await this.prisma.grupe.upsert({
           where: { id: sanitizedData.id },
@@ -114,13 +130,11 @@ export class GrupeService {
           create: sanitizedData,
         });
       }
-  
+
       return 'Grupe table populated successfully.';
     } catch (error) {
       console.error('Error populating Grupe table:', error);
       throw new Error('Failed to populate Grupe table.');
     }
   }
-  
-  
 }
