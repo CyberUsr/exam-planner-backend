@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
@@ -5,7 +6,10 @@ import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService, private jwtService: JwtService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
 
   async register(email: string, password: string) {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -35,8 +39,8 @@ export class AuthService {
       isProfesor, // Include this in the token payload if necessary
     });
 
-    return { 
-      message: 'Logged in successfully!', 
+    return {
+      message: 'Logged in successfully!',
       token,
       user: { email: user.email, isProfesor }, // Return this for client awareness
     };
