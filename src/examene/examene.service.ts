@@ -184,19 +184,72 @@ export class ExameneService {
   }
 
   async exportExamsGroupedByDay() {
-    const exams = await this.prisma.examene.findMany({
-      include: { professors: true, assistants: true, ExameneSali: true },
-    });
+    try {
+      const exams = await this.prisma.examene.findMany({
+        include: {
+          professors: true,
+          assistants: true,
+          ExameneSali: {
+            include: {
+              sala: true, // Include sala details
+            },
+          },
+        },
+        orderBy: { data: 'asc' }, // Order by date
+      });
 
-    console.log('Retrieved exams:', exams);
+      // Group exams by date
+      const groupedExams = exams.reduce((grouped, exam) => {
+        // Extract and format the date
+        const date =
+          exam.data instanceof Date
+            ? exam.data.toISOString().split('T')[0]
+            : new Date(exam.data).toISOString().split('T')[0];
 
-    // Group exams by date
-    return exams.reduce((grouped, exam) => {
-      const date = exam.data.toISOString().split('T')[0];
-      if (!grouped[date]) grouped[date] = [];
-      grouped[date].push(exam);
-      return grouped;
-    }, {});
+        if (!grouped[date]) {
+          grouped[date] = []; // Initialize an array for the date
+        }
+
+        // Format professors and assistants
+        const formattedProfessors = exam.professors.map((prof) =>
+          prof.firstName && prof.lastName
+            ? `${prof.firstName} ${prof.lastName}`
+            : prof.id_profesor,
+        );
+        const formattedAssistants = exam.assistants.map((asst) =>
+          asst.firstName && asst.lastName
+            ? `${asst.firstName} ${asst.lastName}`
+            : asst.id_profesor,
+        );
+
+        // Include the room details
+        const formattedRooms =
+          exam.ExameneSali?.map((room) => ({
+            roomName: room.sala?.nume || room.id_sala,
+            building: room.sala?.buildingName || 'Unknown',
+          })) || [];
+
+        // Add exam to the grouped object
+        grouped[date].push({
+          id: exam.id_examene,
+          subject: exam.nume_materie,
+          time: exam.ora.toISOString().split('T')[1], // Extract time
+          examType: exam.tip_evaluare,
+          updatedBy: exam.actualizatDe,
+          updatedAt: exam.actualizatLa.toISOString(),
+          professors: formattedProfessors,
+          assistants: formattedAssistants,
+          rooms: formattedRooms,
+        });
+
+        return grouped;
+      }, {});
+
+      return groupedExams; // Return the grouped data
+    } catch (error) {
+      console.error('Error in exportExamsGroupedByDay:', error);
+      throw new BadRequestException('Failed to export exams grouped by day');
+    }
   }
 
   async forceAddExam(data: Partial<Examene>): Promise<Examene> {

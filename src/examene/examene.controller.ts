@@ -18,6 +18,18 @@ import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 export class ExameneController {
   constructor(private readonly exameneService: ExameneService) {}
 
+  // Export exams grouped by day
+  @Get('export')
+  @ApiOperation({ summary: 'Export exams grouped by day' })
+  async exportExamsGroupedByDay() {
+    try {
+      const groupedExams = await this.exameneService.exportExamsGroupedByDay();
+      return groupedExams;
+    } catch (error) {
+      throw new BadRequestException('Failed to export exams grouped by day');
+    }
+  }
+
   // Get all examene
   @Get()
   @ApiOperation({ summary: 'Get all examene' })
@@ -153,12 +165,6 @@ export class ExameneController {
     return this.exameneService.filterExamsByFaculty(faculty);
   }
 
-  @Get('export')
-  @ApiOperation({ summary: 'Export exams grouped by day' })
-  async exportExamsGroupedByDay() {
-    const groupedExams = await this.exameneService.exportExamsGroupedByDay();
-    return groupedExams;
-  }
   //force exam by secretariat
 
   @Post('force-add')
