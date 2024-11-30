@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Param, Body, Put, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Put,
+  Delete,
+} from '@nestjs/common';
 import { ExameneService } from './examene.service';
 import { Examene } from '@prisma/client';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
@@ -63,7 +71,10 @@ export class ExameneController {
       },
     },
   })
-  async updateExam(@Param('id') id_exam: string, @Body() data: Partial<Examene>) {
+  async updateExam(
+    @Param('id') id_exam: string,
+    @Body() data: Partial<Examene>,
+  ) {
     return this.exameneService.updateExam(id_exam, data);
   }
 
