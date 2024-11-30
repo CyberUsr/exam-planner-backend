@@ -19,8 +19,8 @@ export class DepartamenteController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a department by ID' })
   @ApiParam({ name: 'id', type: String, description: 'ID of the department' })
-  async getDepartamentById(@Param('id') id_departament: string) {
-    return this.departamenteService.getDepartamentById(id_departament);
+  async getDepartamentById(@Param('id') idDepartament: string) {
+    return this.departamenteService.getDepartamentById(idDepartament);
   }
 
   // Create a new department
@@ -31,8 +31,9 @@ export class DepartamenteController {
     schema: {
       type: 'object',
       properties: {
-        id_departament: { type: 'string', example: 'dep-001' },
-        nume_departament: { type: 'string', example: 'Computer Science' },
+        idDepartament: { type: 'string', example: 'dep-001' },
+        shortName: { type: 'string', example: 'CS' },
+        longName: { type: 'string', example: 'Computer Science' },
       },
     },
   })
@@ -49,19 +50,28 @@ export class DepartamenteController {
     schema: {
       type: 'object',
       properties: {
-        nume_departament: { type: 'string', example: 'Software Engineering' },
+        shortName: { type: 'string', example: 'SE' },
+        longName: { type: 'string', example: 'Software Engineering' },
       },
     },
   })
-  async updateDepartament(@Param('id') id_departament: string, @Body() data: Partial<Departamente>) {
-    return this.departamenteService.updateDepartament(id_departament, data);
+  async updateDepartament(@Param('id') idDepartament: string, @Body() data: Partial<Departamente>) {
+    return this.departamenteService.updateDepartament(idDepartament, data);
   }
 
   // Delete a department by ID
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a department by ID' })
   @ApiParam({ name: 'id', type: String, description: 'ID of the department' })
-  async deleteDepartament(@Param('id') id_departament: string) {
-    return this.departamenteService.deleteDepartament(id_departament);
+  async deleteDepartament(@Param('id') idDepartament: string) {
+    return this.departamenteService.deleteDepartament(idDepartament);
   }
+
+    // Populate the departments table
+@Post('populate')
+@ApiOperation({ summary: 'Populate the Departamente table from external data' })
+async populateDepartamente() {
+  return this.departamenteService.populateDepartamente();
+}
+
 }

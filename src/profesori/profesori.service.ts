@@ -19,20 +19,22 @@ export class ProfesoriService {
   }
 
   async getProfesorById(id_profesor: string): Promise<Profesori | null> {
-    return this.prisma.profesori.findUnique({ where: { id_profesor } });
+    const profesor = await this.prisma.profesori.findUnique({ where: { id_profesor } });
+    if (!profesor) {
+      throw new NotFoundException('Professor not found');
+    }
+    return profesor;
   }
 
   async createProfesor(data: Profesori): Promise<Profesori> {
-    // Check if the provided id_departament exists
     const departmentExists = await this.prisma.departamente.findUnique({
-      where: { id_departament: data.id_departament },
+      where: { idDepartament: data.idDepartament },
     });
 
     if (!departmentExists) {
       throw new BadRequestException('The specified department does not exist.');
     }
 
-    // Create the professor
     return this.prisma.profesori.create({
       data,
     });
@@ -42,6 +44,14 @@ export class ProfesoriService {
     id_profesor: string,
     data: Partial<Profesori>,
   ): Promise<Profesori> {
+    const existingProfesor = await this.prisma.profesori.findUnique({
+      where: { id_profesor },
+    });
+
+    if (!existingProfesor) {
+      throw new NotFoundException('Professor not found');
+    }
+
     return this.prisma.profesori.update({
       where: { id_profesor },
       data,
@@ -49,67 +59,68 @@ export class ProfesoriService {
   }
 
   async deleteProfesor(id_profesor: string): Promise<Profesori> {
+    const existingProfesor = await this.prisma.profesori.findUnique({
+      where: { id_profesor },
+    });
+
+    if (!existingProfesor) {
+      throw new NotFoundException('Professor not found');
+    }
+
     return this.prisma.profesori.delete({ where: { id_profesor } });
   }
 
   async populateProfesori(): Promise<string> {
     const url = 'https://orar.usv.ro/orar/vizualizare/data/cadre.php?json';
-    const defaultDepartmentId = 'default-dep'; // Default department ID
-    const defaultFacultyName = 'Default Faculty'; // Default faculty name
-
+  
     try {
-      // Fetch data from the external URL
       const response = await axios.get(url);
       const data = response.data;
-
-      // Iterate over the fetched data and populate the Profesori table
+  
+      // First, fetch all departments to reduce database queries
+      const departments = await this.prisma.departamente.findMany();
+  
       for (const item of data) {
-        const { id, lastName, firstName, facultyName } = item;
-
-        // Skip invalid records
-        if (!id || !lastName || !firstName) {
+        const { id, lastName, firstName, facultyName,departmentName } = item;
+  
+        if (!id || !lastName || !firstName) continue;
+  
+        // Find the department that matches the faculty name
+        const department = departments.find(dep => 
+          dep.longName === facultyName || 
+          dep.shortName === facultyName
+        );
+  
+        // If no matching department is found, skip this professor
+        if (!department) {
+          console.warn(`No department found for: ${facultyName || 'Unknown'}`);
           continue;
         }
-
-        // Use facultyName or assign default
-        const faculty = facultyName || defaultFacultyName;
-        const departmentId = faculty.replace(/\s+/g, '-').toLowerCase(); // Generate a unique ID for each faculty
-
-        // Ensure the department exists
-        let department = await this.prisma.departamente.findUnique({
-          where: { id_departament: departmentId },
-        });
-
-        if (!department) {
-          department = await this.prisma.departamente.create({
-            data: {
-              id_departament: departmentId,
-              nume_departament: faculty, // Use faculty name as department name
-            },
-          });
-        }
-
-        // Create or update the professor record
+  
         await this.prisma.profesori.upsert({
           where: { id_profesor: id },
           update: {
-            nume: lastName.trim(),
-            prenume: firstName.trim(),
-            email: `${firstName.trim().toLowerCase()}.${lastName.trim().toLowerCase()}@example.com`, // Example email
-            specializare: 'General', // Default specialization
-            id_departament: department.id_departament, // Link to the department
+            lastName: lastName.trim(),
+            firstName: firstName.trim(),
+            emailAddress: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+            idDepartament: department.idDepartament,
+            facultyName: facultyName || null, // Add facultyName, use null if not provided
+            departmentName: departmentName || null, // Add facultyName, use null if not provided
+       
           },
           create: {
             id_profesor: id,
-            nume: lastName.trim(),
-            prenume: firstName.trim(),
-            email: `${firstName.trim().toLowerCase()}.${lastName.trim().toLowerCase()}@example.com`, // Example email
-            specializare: 'General', // Default specialization
-            id_departament: department.id_departament, // Link to the department
+            lastName: lastName.trim(),
+            firstName: firstName.trim(),
+            emailAddress: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+            idDepartament: department.idDepartament,
+            facultyName: facultyName || null, // Add facultyName, use null if not provided
+            departmentName: departmentName || null, // Add facultyName, use null if not provided
+       
           },
-        });
+        })
       }
-
+  
       return 'Profesori table populated successfully.';
     } catch (error) {
       console.error('Error populating Profesori table:', error);

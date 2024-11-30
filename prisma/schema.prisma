@@ -21,19 +21,30 @@ model User {
   role     Role   @default(Student) // Default role is Student
 }
 
-
-
 model Profesori {
-  id_profesor    String     @id
-  nume           String
-  prenume        String
-  email          String
-  specializare   String
-  id_departament String
-  departamente   Departamente @relation(fields: [id_departament], references: [id_departament])
+  id_profesor      String        @id @default(uuid())
+  lastName         String?
+  firstName        String?
+  emailAddress     String        // Now required
+  phoneNumber      String?
+  facultyName      String?
+  departmentName   String        @default("Exterior")
 
-  CereriLegatura CereriLegatura[]
+  idDepartament    String        // Now required
+  departament      Departamente  @relation(fields: [idDepartament], references: [idDepartament])
+
+  cereriLegatura   CereriLegatura[]
 }
+
+model Departamente {
+  idDepartament  String        @id @default(uuid())
+  shortName      String?
+  longName       String?
+
+  profesori      Profesori[]
+}
+
+
 
 model Studenti {
   id_student     String     @id
@@ -82,13 +93,6 @@ model Examene {
   ExameneSali    ExameneSali[]
 }
 
-model Departamente {
-  id_departament     String   @id
-  nume_departament   String
-
-  Profesori          Profesori[]
- 
-}
 
 model Grupe {
   id                       String  @id @default(uuid())
