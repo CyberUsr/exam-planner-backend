@@ -43,11 +43,12 @@ export class ProfesoriController {
       type: 'object',
       properties: {
         id_profesor: { type: 'string', example: 'prof-001' },
-        nume: { type: 'string', example: 'John' },
-        prenume: { type: 'string', example: 'Doe' },
-        email: { type: 'string', example: 'john.doe@example.com' },
-        specializare: { type: 'string', example: 'Mathematics' },
-        id_departament: { type: 'string', example: 'dep-001' },
+        lastName: { type: 'string', example: 'Doe' },
+        firstName: { type: 'string', example: 'John' },
+        emailAddress: { type: 'string', example: 'john.doe@example.com' },
+        phoneNumber: { type: 'string', example: '1234567890' },
+        departmentName: { type: 'string', example: 'Computer Science' },
+        idDepartament: { type: 'string', example: 'dep-001' },
       },
     },
   })
@@ -63,10 +64,10 @@ export class ProfesoriController {
     schema: {
       type: 'object',
       properties: {
-        nume: { type: 'string', example: 'Jane' },
-        prenume: { type: 'string', example: 'Smith' },
-        email: { type: 'string', example: 'jane.smith@example.com' },
-        specializare: { type: 'string', example: 'Physics' },
+        lastName: { type: 'string', example: 'Smith' },
+        firstName: { type: 'string', example: 'Jane' },
+        emailAddress: { type: 'string', example: 'jane.smith@example.com' },
+        phoneNumber: { type: 'string', example: '9876543210' },
       },
     },
   })
