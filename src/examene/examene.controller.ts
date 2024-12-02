@@ -8,6 +8,7 @@ import {
   Put,
   Delete,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { ExameneService } from './examene.service';
 import { Examene } from '@prisma/client';
@@ -187,6 +188,22 @@ export class ExameneController {
       return await this.exameneService.forceAddExam(data);
     } catch (error) {
       console.error('Error creating exam:', error);
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  @Get('filter')
+  @ApiOperation({
+    summary: 'Filter exams by specialization, year, and group',
+  })
+  async filterExams(
+    @Query('specialization') specialization: string,
+    @Query('year') year: string,
+    @Query('group') group: string,
+  ) {
+    try {
+      return await this.exameneService.filterExams(specialization, year, group);
+    } catch (error) {
       throw new BadRequestException(error.message);
     }
   }

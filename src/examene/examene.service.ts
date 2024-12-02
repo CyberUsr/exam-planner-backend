@@ -276,4 +276,33 @@ export class ExameneService {
       },
     });
   }
+
+  async filterExams(specialization: string, year: string, group: string) {
+    if (!specialization || !year || !group) {
+      throw new BadRequestException('All filtering parameters are required');
+    }
+
+    return this.prisma.examene.findMany({
+      where: {
+        grupa: {
+          specializationShortName: specialization,
+          studyYear: year,
+          groupName: group,
+        },
+      },
+      include: {
+        professors: true,
+        assistants: true,
+        ExameneSali: {
+          include: {
+            sala: true,
+          },
+        },
+        grupa: true, // Include group details if needed
+      },
+      orderBy: {
+        data: 'asc', // Order by exam date
+      },
+    });
+  }
 }
