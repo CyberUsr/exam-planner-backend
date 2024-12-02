@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
@@ -16,7 +17,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET', 'default_secret'), // Use an environment variable for the secret
-        signOptions: { expiresIn: configService.get<string>('JWT_EXPIRATION', '1h') }, // Configurable expiration time
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRATION', '1h'),
+        }, // Configurable expiration time
       }),
     }),
   ],

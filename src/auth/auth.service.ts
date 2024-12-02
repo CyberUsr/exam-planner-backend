@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
@@ -6,7 +7,10 @@ import { Role } from '@prisma/client'; // Import the generated Role enum
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService, private jwtService: JwtService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
 
   async register(email: string, password: string) {
     const hashedPassword = await bcrypt.hash(password, 10);

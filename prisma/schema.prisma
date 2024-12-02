@@ -34,6 +34,8 @@ model Profesori {
   departament      Departamente  @relation(fields: [idDepartament], references: [idDepartament])
 
   cereriLegatura   CereriLegatura[]
+  examene_as_professor Examene[] @relation("ProfessorToExamene")
+  examene_as_assistant Examene[] @relation("AssistantToExamene")
 }
 
 model Departamente {
@@ -82,17 +84,18 @@ model Cereri {
 }
 
 model Examene {
-  id_examene   String    @id @default(uuid()) // Auto-generate UUID
-  nume_materie   String
-  data           DateTime
-  ora            DateTime
-  tip_evaluare   String
-  actualizatDe   String
-  actualizatLa   DateTime
+  id_examene   String      @id @default(uuid()) // Auto-generate UUID
+  nume_materie String
+  data         DateTime
+  ora          DateTime
+  tip_evaluare String
+  actualizatDe String
+  actualizatLa DateTime
 
-  ExameneSali    ExameneSali[]
+  professors  Profesori[] @relation("ProfessorToExamene")
+  assistants  Profesori[] @relation("AssistantToExamene")
+  ExameneSali ExameneSali[]
 }
-
 
 model Grupe {
   id                       String  @id @default(uuid())

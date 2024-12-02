@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Param, Body, Put, Delete } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Put,
+  Delete,
+  BadRequestException,
+} from '@nestjs/common';
 import { ExameneService } from './examene.service';
 import { Examene } from '@prisma/client';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
@@ -7,6 +17,18 @@ import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 @Controller('examene')
 export class ExameneController {
   constructor(private readonly exameneService: ExameneService) {}
+
+  // Export exams grouped by day
+  @Get('export')
+  @ApiOperation({ summary: 'Export exams grouped by day' })
+  async exportExamsGroupedByDay() {
+    try {
+      const groupedExams = await this.exameneService.exportExamsGroupedByDay();
+      return groupedExams;
+    } catch (error) {
+      throw new BadRequestException('Failed to export exams grouped by day');
+    }
+  }
 
   // Get all examene
   @Get()
@@ -31,21 +53,39 @@ export class ExameneController {
     schema: {
       type: 'object',
       properties: {
-        id_examene: { type: 'string', example: 'exam-001' },
         nume_materie: { type: 'string', example: 'Mathematics' },
-        data: { type: 'string', example: '2024-06-15T10:00:00Z' },
-        ora: { type: 'string', example: '2024-06-15T10:00:00Z' },
+        data: { type: 'string', example: '2024-06-15T10:00:00Z' }, // ISO format
+        ora: { type: 'string', example: '10:00:00' }, // Time format
         tip_evaluare: { type: 'string', example: 'Final' },
         actualizatDe: { type: 'string', example: 'admin' },
-        actualizatLa: { type: 'string', example: '2024-06-01T12:00:00Z' },
+        professors: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['1704'], // IDs of professors
+        },
+        assistants: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['1546'], // IDs of assistants
+        },
       },
     },
   })
-  async createExam(@Body() data: Examene) {
+  async createExam(
+    @Body()
+    data: {
+      nume_materie: string;
+      data: string; // ISO format for combined date and time
+      ora: string;
+      tip_evaluare: string;
+      actualizatDe: string;
+      professors: string[];
+      assistants: string[];
+    },
+  ) {
     return this.exameneService.createExam(data);
   }
-
-  // Update an exam by ID
+  // In examene.controller.ts
   @Put(':id')
   @ApiOperation({ summary: 'Update an exam by ID' })
   @ApiParam({ name: 'id', type: String, description: 'ID of the exam' })
@@ -55,23 +95,99 @@ export class ExameneController {
       type: 'object',
       properties: {
         nume_materie: { type: 'string', example: 'Physics' },
-        data: { type: 'string', example: '2024-06-20T14:00:00Z' },
-        ora: { type: 'string', example: '2024-06-20T14:00:00Z' },
+        data: {
+          type: 'string',
+          example: '2024-06-20T14:00:00Z',
+          description: 'Full ISO date-time string',
+        },
         tip_evaluare: { type: 'string', example: 'Midterm' },
         actualizatDe: { type: 'string', example: 'admin' },
-        actualizatLa: { type: 'string', example: '2024-06-02T12:00:00Z' },
+        actualizatLa: {
+          type: 'string',
+          example: '2024-06-02T12:00:00Z',
+          description: 'Optional update timestamp',
+        },
+        professors: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['1704', '1705'],
+        },
+        assistants: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['1546'],
+        },
       },
     },
   })
-  async updateExam(@Param('id') id_exam: string, @Body() data: Partial<Examene>) {
+  async updateExam(
+    @Param('id') id_exam: string,
+    @Body()
+    data: {
+      nume_materie?: string;
+      data?: string;
+      tip_evaluare?: string;
+      actualizatDe?: string;
+      actualizatLa?: string;
+      professors?: string[];
+      assistants?: string[];
+    },
+  ) {
     return this.exameneService.updateExam(id_exam, data);
   }
-
   // Delete an exam by ID
   @Delete(':id')
   @ApiOperation({ summary: 'Delete an exam by ID' })
   @ApiParam({ name: 'id', type: String, description: 'ID of the exam' })
   async deleteExam(@Param('id') id_exam: string) {
     return this.exameneService.deleteExam(id_exam);
+  }
+
+  //v1 update
+  @Get('availability/:professorId/:date/:time')
+  @ApiOperation({ summary: 'Check professor/assistant availability' })
+  async checkAvailability(
+    @Param('professorId') professorId: string,
+    @Param('date') date: string,
+    @Param('time') time: string, // Ensure time is passed as a string
+  ) {
+    const isAvailable = await this.exameneService.checkAvailability(
+      professorId,
+      new Date(date), // Convert date string to Date object
+      time, // Pass time string directly
+    );
+    return { available: isAvailable };
+  }
+
+  @Get('filter/:faculty')
+  @ApiOperation({ summary: 'Filter exams by faculty' })
+  async filterExamsByFaculty(@Param('faculty') faculty: string) {
+    return this.exameneService.filterExamsByFaculty(faculty);
+  }
+
+  //force exam by secretariat
+
+  @Post('force-add')
+  @ApiOperation({ summary: 'Force add a new exam' })
+  @ApiBody({
+    description: 'Data for creating a new exam',
+    schema: {
+      type: 'object',
+      properties: {
+        nume_materie: { type: 'string', example: 'Mathematics' },
+        data: { type: 'string', example: '2024-06-15T10:00:00Z' },
+        ora: { type: 'string', example: '2024-06-15T10:00:00Z' },
+        tip_evaluare: { type: 'string', example: 'Final' },
+        actualizatDe: { type: 'string', example: 'admin' },
+      },
+    },
+  })
+  async forceAddExam(@Body() data: Partial<Examene>) {
+    try {
+      return await this.exameneService.forceAddExam(data);
+    } catch (error) {
+      console.error('Error creating exam:', error);
+      throw new BadRequestException(error.message);
+    }
   }
 }
