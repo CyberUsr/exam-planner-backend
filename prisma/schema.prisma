@@ -95,6 +95,11 @@ model Examene {
   professors  Profesori[] @relation("ProfessorToExamene")
   assistants  Profesori[] @relation("AssistantToExamene")
   ExameneSali ExameneSali[]
+
+  //for selecting an exam for a specific groupe
+   id_grupa     String?    // Optional relation to a specific group
+   grupa        Grupe?     @relation(fields: [id_grupa], references: [id])
+   @@index([id_grupa]) // Ensure efficient lookups by id_grupa
 }
 
 model Grupe {
@@ -107,6 +112,8 @@ model Grupe {
   subgroupIndex            String?
   isModular                String
   orarId                   String
+
+  Examene Examene[]
 }
 
 
