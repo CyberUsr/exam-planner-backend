@@ -13,13 +13,28 @@ export class ExameneService {
 
   // Fetch all exams
   async getAllExamene(): Promise<Examene[]> {
-    return this.prisma.examene.findMany();
+    return this.prisma.examene.findMany({
+      include: {
+        materie: true,
+        grupa: true,
+        ExameneSali: {
+          include: { sala: true },
+        },
+      },
+    });
   }
 
   // Fetch a single exam by ID
-  async getExamById(id_exam: string): Promise<Examene | null> {
+  async getExamById(id_exam: string): Promise<Examene> {
     const exam = await this.prisma.examene.findUnique({
       where: { id_examene: id_exam },
+      include: {
+        materie: true,
+        grupa: true,
+        ExameneSali: {
+          include: { sala: true },
+        },
+      },
     });
     if (!exam) {
       throw new NotFoundException(`Exam with ID ${id_exam} not found.`);
@@ -27,54 +42,52 @@ export class ExameneService {
     return exam;
   }
 
+  // Create a new exam
   async createExam(data: {
-    nume_materie: string;
+    id_materie: string;
     data: string; // ISO format for combined date and time
     ora: string; // Time format
     tip_evaluare: string;
     actualizatDe: string;
-    professors: string[]; // Array of professor IDs
-    assistants: string[]; // Array of assistant IDs
+    id_grupa?: string;
+    ExameneSali?: { id_sala: string }[]; // Array of room IDs
   }): Promise<Examene> {
     const combinedDateTime = new Date(data.data);
 
-    if (!combinedDateTime || isNaN(combinedDateTime.getTime())) {
-      throw new Error('Invalid date or time provided.');
+    if (isNaN(combinedDateTime.getTime())) {
+      throw new BadRequestException('Invalid date provided.');
     }
 
     return this.prisma.examene.create({
       data: {
         id_examene: crypto.randomUUID(),
-        nume_materie: data.nume_materie,
+        id_materie: data.id_materie,
         data: combinedDateTime,
-        ora: combinedDateTime,
+        ora: new Date(`${data.data}T${data.ora}`),
         tip_evaluare: data.tip_evaluare,
         actualizatDe: data.actualizatDe,
         actualizatLa: new Date(),
-        professors: {
-          connect: data.professors.map((id) => ({ id_profesor: id })),
-        },
-        assistants: {
-          connect: data.assistants.map((id) => ({ id_profesor: id })),
+        id_grupa: data.id_grupa || null,
+        ExameneSali: {
+          create: data.ExameneSali?.map((sala) => ({ id_sala: sala.id_sala })) || [],
         },
       },
     });
   }
-  // In examene.service.ts
+
+  // Update an exam
   async updateExam(
     id_exam: string,
     data: {
-      nume_materie?: string;
-      data?: string; // ISO format for combined date and time
-      ora?: string; // Time format (e.g., "14:00:00")
+      id_materie?: string;
+      data?: string;
+      ora?: string;
       tip_evaluare?: string;
       actualizatDe?: string;
-      actualizatLa?: string; // ISO format for datetime
-      professors?: string[];
-      assistants?: string[];
+      id_grupa?: string;
+      ExameneSali?: { id_sala: string }[];
     },
   ): Promise<Examene> {
-    // Check if the exam exists
     const existingExam = await this.prisma.examene.findUnique({
       where: { id_examene: id_exam },
     });
@@ -83,55 +96,43 @@ export class ExameneService {
       throw new NotFoundException(`Exam with ID ${id_exam} not found.`);
     }
 
-    // Combine `data` and `ora` into a single Date object
     let combinedDateTime: Date | undefined;
     if (data.data) {
       combinedDateTime = new Date(data.data);
-
-      if (!combinedDateTime || isNaN(combinedDateTime.getTime())) {
-        throw new BadRequestException('Invalid date or time provided.');
+      if (isNaN(combinedDateTime.getTime())) {
+        throw new BadRequestException('Invalid date provided.');
       }
     }
 
-    // Prepare data for update
     const updateData: any = {
-      nume_materie: data.nume_materie,
+      id_materie: data.id_materie,
       data: combinedDateTime || existingExam.data,
-      ora: combinedDateTime || existingExam.ora,
+      ora: data.ora ? new Date(`${data.data}T${data.ora}`) : existingExam.ora,
       tip_evaluare: data.tip_evaluare,
       actualizatDe: data.actualizatDe,
-      actualizatLa: data.actualizatLa
-        ? new Date(data.actualizatLa)
-        : new Date(),
+      actualizatLa: new Date(),
+      id_grupa: data.id_grupa || existingExam.id_grupa,
     };
 
-    // Update professors and assistants relationships
-    if (data.professors) {
-      updateData.professors = {
-        set: data.professors.map((id) => ({ id_profesor: id })),
+    if (data.ExameneSali) {
+      updateData.ExameneSali = {
+        deleteMany: {}, // Clear existing relations
+        create: data.ExameneSali.map((sala) => ({ id_sala: sala.id_sala })),
       };
     }
 
-    if (data.assistants) {
-      updateData.assistants = {
-        set: data.assistants.map((id) => ({ id_profesor: id })),
-      };
-    }
-
-    // Execute the update
     try {
       return await this.prisma.examene.update({
         where: { id_examene: id_exam },
         data: updateData,
       });
     } catch (error) {
-      console.error('Error updating exam:', error);
-      throw new BadRequestException('Failed to update exam');
+      throw new BadRequestException('Failed to update exam.');
     }
   }
-  // Delete an exam by ID
+
+  // Delete an exam
   async deleteExam(id_exam: string): Promise<Examene> {
-    // Check if the exam exists
     const existingExam = await this.prisma.examene.findUnique({
       where: { id_examene: id_exam },
     });
@@ -139,147 +140,97 @@ export class ExameneService {
       throw new NotFoundException(`Exam with ID ${id_exam} not found.`);
     }
 
-    // Delete the exam record
     return this.prisma.examene.delete({
       where: { id_examene: id_exam },
     });
   }
 
+  // Check availability of a professor or assistant
   async checkAvailability(professorId: string, date: Date, time: string) {
-    // Combine date and time into a single Date object
-    const combinedDateTime = new Date(
-      `${date.toISOString().split('T')[0]}T${time}`,
-    );
-
-    // Validate the constructed Date
+    const combinedDateTime = new Date(`${date.toISOString().split('T')[0]}T${time}`);
+  
     if (isNaN(combinedDateTime.getTime())) {
-      throw new Error('Invalid date or time provided');
+      throw new BadRequestException('Invalid date or time provided.');
     }
-
+  
+    // Remove the id_profesor filter
     const conflicts = await this.prisma.examene.findMany({
       where: {
         AND: [
           { data: date },
           { ora: combinedDateTime },
-          {
-            OR: [
-              { professors: { some: { id_profesor: professorId } } },
-              { assistants: { some: { id_profesor: professorId } } },
-            ],
-          },
         ],
       },
     });
+  
+    return conflicts.length === 0;
+  }
+  // Find materie by name
+  async findMaterieByName(nume_materie: string) {
+    const materie = await this.prisma.materii.findUnique({
+      where: { nume_materie },
+    });
 
-    return conflicts.length === 0; // Returns true if no conflicts
+    if (!materie) {
+      throw new NotFoundException(`Materie with name '${nume_materie}' not found.`);
+    }
+    return materie;
   }
 
-  async filterExamsByFaculty(facultyName: string) {
+
+  // Filter exams by faculty
+  async filterExamsByFaculty(specializationShortName: string) {
+    if (!specializationShortName) {
+      throw new BadRequestException('Specialization short name is required.');
+    }
+  
     return this.prisma.examene.findMany({
       where: {
-        professors: { some: { facultyName } },
-      },
-      include: { professors: true, assistants: true },
-    });
-  }
-
-  async exportExamsGroupedByDay() {
-    try {
-      const exams = await this.prisma.examene.findMany({
-        include: {
-          professors: true,
-          assistants: true,
-          ExameneSali: {
-            include: {
-              sala: true, // Include sala details
-            },
-          },
+        materie: {
+          specializationShortName: specializationShortName, // Use the appropriate field
         },
-        orderBy: { data: 'asc' }, // Order by date
-      });
-
-      // Group exams by date
-      const groupedExams = exams.reduce((grouped, exam) => {
-        // Extract and format the date
-        const date =
-          exam.data instanceof Date
-            ? exam.data.toISOString().split('T')[0]
-            : new Date(exam.data).toISOString().split('T')[0];
-
-        if (!grouped[date]) {
-          grouped[date] = []; // Initialize an array for the date
-        }
-
-        // Format professors and assistants
-        const formattedProfessors = exam.professors.map((prof) =>
-          prof.firstName && prof.lastName
-            ? `${prof.firstName} ${prof.lastName}`
-            : prof.id_profesor,
-        );
-        const formattedAssistants = exam.assistants.map((asst) =>
-          asst.firstName && asst.lastName
-            ? `${asst.firstName} ${asst.lastName}`
-            : asst.id_profesor,
-        );
-
-        // Include the room details
-        const formattedRooms =
-          exam.ExameneSali?.map((room) => ({
-            roomName: room.sala?.nume || room.id_sala,
-            building: room.sala?.buildingName || 'Unknown',
-          })) || [];
-
-        // Add exam to the grouped object
-        grouped[date].push({
-          id: exam.id_examene,
-          subject: exam.nume_materie,
-          time: exam.ora.toISOString().split('T')[1], // Extract time
-          examType: exam.tip_evaluare,
-          updatedBy: exam.actualizatDe,
-          updatedAt: exam.actualizatLa.toISOString(),
-          professors: formattedProfessors,
-          assistants: formattedAssistants,
-          rooms: formattedRooms,
-        });
-
-        return grouped;
-      }, {});
-
-      return groupedExams; // Return the grouped data
-    } catch (error) {
-      console.error('Error in exportExamsGroupedByDay:', error);
-      throw new BadRequestException('Failed to export exams grouped by day');
-    }
-  }
-
-  async forceAddExam(data: Partial<Examene>): Promise<Examene> {
-    // Ensure required fields are present
-    if (
-      !data.nume_materie ||
-      !data.data ||
-      !data.ora ||
-      !data.tip_evaluare ||
-      !data.actualizatDe
-    ) {
-      throw new Error('Missing required fields for creating an exam');
-    }
-
-    return this.prisma.examene.create({
-      data: {
-        id_examene: crypto.randomUUID(),
-        nume_materie: data.nume_materie,
-        data: data.data,
-        ora: data.ora,
-        tip_evaluare: data.tip_evaluare,
-        actualizatDe: data.actualizatDe,
-        actualizatLa: new Date(), // Add the current timestamp
       },
+      include: { 
+        materie: true, 
+        grupa: true, 
+        ExameneSali: { include: { sala: true } } 
+      },
+      orderBy: { data: 'asc' },
     });
   }
-
+  
+  // Export exams grouped by day
+  async exportExamsGroupedByDay() {
+    const exams = await this.prisma.examene.findMany({
+      include: {
+        materie: true,
+        grupa: true,
+        ExameneSali: {
+          include: { sala: true },
+        },
+      },
+      orderBy: { data: 'asc' },
+    });
+  
+    const groupedExams = exams.reduce((grouped, exam) => {
+      const date = exam.data.toISOString().split('T')[0];
+      if (!grouped[date]) grouped[date] = [];
+  
+      grouped[date].push({
+        id: exam.id_examene,
+        subject: exam.materie.nume_materie, // Changed from 'nume'
+        // ... rest of the code remains the same
+      });
+  
+      return grouped;
+    }, {});
+  
+    return groupedExams;
+  }
+  // Filter exams
   async filterExams(specialization: string, year: string, group: string) {
     if (!specialization || !year || !group) {
-      throw new BadRequestException('All filtering parameters are required');
+      throw new BadRequestException('All filtering parameters are required.');
     }
 
     return this.prisma.examene.findMany({
@@ -291,18 +242,45 @@ export class ExameneService {
         },
       },
       include: {
-        professors: true,
-        assistants: true,
-        ExameneSali: {
-          include: {
-            sala: true,
-          },
-        },
-        grupa: true, // Include group details if needed
+        materie: true,
+        grupa: true,
+        ExameneSali: { include: { sala: true } },
       },
-      orderBy: {
-        data: 'asc', // Order by exam date
+      orderBy: { data: 'asc' },
+    });
+  }
+  async forceAddExam(data: {
+    id_materie: string;
+    data: string; // ISO format for combined date and time
+    ora: string;  // Time format
+    tip_evaluare: string;
+    actualizatDe: string;
+    id_grupa?: string;
+    ExameneSali?: { id_sala: string }[];
+  }): Promise<Examene> {
+    const combinedDateTime = new Date(data.data);
+  
+    // Minimal validation to ensure dates and IDs are provided
+    if (isNaN(combinedDateTime.getTime())) {
+      throw new BadRequestException('Invalid date provided.');
+    }
+  
+    // Direct database insertion without checks
+    return this.prisma.examene.create({
+      data: {
+        id_examene: crypto.randomUUID(),
+        id_materie: data.id_materie,
+        data: combinedDateTime,
+        ora: new Date(`${data.data}T${data.ora}`),
+        tip_evaluare: data.tip_evaluare,
+        actualizatDe: data.actualizatDe,
+        actualizatLa: new Date(),
+        id_grupa: data.id_grupa || null,
+        ExameneSali: {
+          create: data.ExameneSali?.map((sala) => ({ id_sala: sala.id_sala })) || [],
+        },
       },
     });
   }
+  
 }

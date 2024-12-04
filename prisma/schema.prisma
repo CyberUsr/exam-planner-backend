@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" // or your database provider
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -18,24 +18,24 @@ model User {
   id       Int    @id @default(autoincrement())
   email    String @unique
   password String
-  role     Role   @default(Student) // Default role is Student
+  role     Role   @default(Student)
 }
 
 model Profesori {
   id_profesor      String        @id @default(uuid())
   lastName         String?
   firstName        String?
-  emailAddress     String        // Now required
+  emailAddress     String
   phoneNumber      String?
   facultyName      String?
   departmentName   String        @default("Exterior")
 
-  idDepartament    String        // Now required
+  idDepartament    String
   departament      Departamente  @relation(fields: [idDepartament], references: [idDepartament])
 
   cereriLegatura   CereriLegatura[]
-  examene_as_professor Examene[] @relation("ProfessorToExamene")
-  examene_as_assistant Examene[] @relation("AssistantToExamene")
+  examene_as_professor Materii[] @relation("ProfessorToExamene")
+  examene_as_assistant Materii[] @relation("AssistantToExamene")
 }
 
 model Departamente {
@@ -45,8 +45,6 @@ model Departamente {
 
   profesori      Profesori[]
 }
-
-
 
 model Studenti {
   id_student     String     @id
@@ -65,12 +63,8 @@ model Sali {
   shortName      String
   buildingName   String
 
-
   ExameneSali    ExameneSali[]
 }
-
-
-
 
 model Cereri {
   id_cerere      String   @id @default(uuid())
@@ -83,23 +77,38 @@ model Cereri {
   CereriLegatura CereriLegatura[]
 }
 
+model Materii {
+  id_materie     String   @id @default(uuid())
+  nume_materie   String   @unique
+  id_grupa     String?
+  groupName    String?
+  studyYear    String?
+  specializationShortName String?
+
+  professors   Profesori[] @relation("ProfessorToExamene")
+  assistants   Profesori[] @relation("AssistantToExamene")
+  examene      Examene[]
+  grupa        Grupe?      @relation(fields: [id_grupa], references: [id])
+  
+  @@index([id_grupa])
+}
+
 model Examene {
-  id_examene   String      @id @default(uuid()) // Auto-generate UUID
-  nume_materie String
+  id_examene   String      @id @default(uuid())
+  id_materie   String
   data         DateTime
   ora          DateTime
   tip_evaluare String
   actualizatDe String
   actualizatLa DateTime
 
-  professors  Profesori[] @relation("ProfessorToExamene")
-  assistants  Profesori[] @relation("AssistantToExamene")
-  ExameneSali ExameneSali[]
+  ExameneSali  ExameneSali[]
+  materie      Materii     @relation(fields: [id_materie], references: [id_materie])
+  grupa        Grupe?      @relation(fields: [id_grupa], references: [id])  // Added this line
+  id_grupa     String?     // Added this line to match the relation
 
-  //for selecting an exam for a specific groupe
-   id_grupa     String?    // Optional relation to a specific group
-   grupa        Grupe?     @relation(fields: [id_grupa], references: [id])
-   @@index([id_grupa]) // Ensure efficient lookups by id_grupa
+  @@index([id_materie])
+  @@index([id_grupa])  // Added index for the new field
 }
 
 model Grupe {
@@ -113,12 +122,9 @@ model Grupe {
   isModular                String
   orarId                   String
 
-  Examene Examene[]
+  Examene     Examene[]     // Keep this
+  Materii     Materii[]     // Added this line to create the opposite relation
 }
-
-
-
-
 
 model ExameneSali {
   id_examene_sali String      @id @default(uuid())

@@ -11,7 +11,6 @@ import {
   Query,
 } from '@nestjs/common';
 import { ExameneService } from './examene.service';
-import { Examene } from '@prisma/client';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('Examene')
@@ -55,19 +54,19 @@ export class ExameneController {
       type: 'object',
       properties: {
         nume_materie: { type: 'string', example: 'Mathematics' },
-        data: { type: 'string', example: '2024-06-15T10:00:00Z' }, // ISO format
-        ora: { type: 'string', example: '10:00:00' }, // Time format
+        data: { type: 'string', example: '2024-06-15T10:00:00Z' },
+        ora: { type: 'string', example: '10:00:00' },
         tip_evaluare: { type: 'string', example: 'Final' },
         actualizatDe: { type: 'string', example: 'admin' },
         professors: {
           type: 'array',
           items: { type: 'string' },
-          example: ['1704'], // IDs of professors
+          example: ['1704'],
         },
         assistants: {
           type: 'array',
           items: { type: 'string' },
-          example: ['1546'], // IDs of assistants
+          example: ['1546'],
         },
       },
     },
@@ -76,7 +75,7 @@ export class ExameneController {
     @Body()
     data: {
       nume_materie: string;
-      data: string; // ISO format for combined date and time
+      data: string; // ISO format
       ora: string;
       tip_evaluare: string;
       actualizatDe: string;
@@ -84,9 +83,31 @@ export class ExameneController {
       assistants: string[];
     },
   ) {
-    return this.exameneService.createExam(data);
+    try {
+      // Step 1: Find id_materie by nume_materie
+      const materie = await this.exameneService.findMaterieByName(data.nume_materie);
+      if (!materie) {
+        throw new BadRequestException(`Subject with name ${data.nume_materie} not found.`);
+      }
+
+      // Step 2: Construct the payload with id_materie
+      const payload = {
+        id_materie: materie.id_materie, // Map the found ID
+        data: data.data,
+        ora: data.ora,
+        tip_evaluare: data.tip_evaluare,
+        actualizatDe: data.actualizatDe,
+        ExameneSali: [], // Optional, handle room associations if needed
+      };
+
+      // Step 3: Call the service method
+      return this.exameneService.createExam(payload);
+    } catch (error) {
+      throw new BadRequestException(`Error creating exam: ${error.message}`);
+    }
   }
-  // In examene.controller.ts
+
+  // Update an exam
   @Put(':id')
   @ApiOperation({ summary: 'Update an exam by ID' })
   @ApiParam({ name: 'id', type: String, description: 'ID of the exam' })
@@ -136,6 +157,7 @@ export class ExameneController {
   ) {
     return this.exameneService.updateExam(id_exam, data);
   }
+
   // Delete an exam by ID
   @Delete(':id')
   @ApiOperation({ summary: 'Delete an exam by ID' })
@@ -144,7 +166,7 @@ export class ExameneController {
     return this.exameneService.deleteExam(id_exam);
   }
 
-  //v1 update
+  // Check professor/assistant availability
   @Get('availability/:professorId/:date/:time')
   @ApiOperation({ summary: 'Check professor/assistant availability' })
   async checkAvailability(
@@ -166,28 +188,43 @@ export class ExameneController {
     return this.exameneService.filterExamsByFaculty(faculty);
   }
 
-  //force exam by secretariat
-
+  // Force add a new exam
   @Post('force-add')
   @ApiOperation({ summary: 'Force add a new exam' })
   @ApiBody({
-    description: 'Data for creating a new exam',
+    description: 'Data for forcefully adding a new exam',
     schema: {
       type: 'object',
       properties: {
-        nume_materie: { type: 'string', example: 'Mathematics' },
+        id_materie: { type: 'string', example: 'abc123' },
         data: { type: 'string', example: '2024-06-15T10:00:00Z' },
-        ora: { type: 'string', example: '2024-06-15T10:00:00Z' },
+        ora: { type: 'string', example: '10:00' },
         tip_evaluare: { type: 'string', example: 'Final' },
         actualizatDe: { type: 'string', example: 'admin' },
+        id_grupa: { type: 'string', example: 'group1', nullable: true },
+        ExameneSali: {
+          type: 'array',
+          items: { type: 'object', properties: { id_sala: { type: 'string', example: 'sala1' } } },
+        },
       },
     },
   })
-  async forceAddExam(@Body() data: Partial<Examene>) {
+  async forceAddExam(
+    @Body()
+    data: {
+      id_materie: string;
+      data: string;
+      ora: string;
+      tip_evaluare: string;
+      actualizatDe: string;
+      id_grupa?: string;
+      ExameneSali?: { id_sala: string }[];
+    },
+  ) {
     try {
       return await this.exameneService.forceAddExam(data);
     } catch (error) {
-      console.error('Error creating exam:', error);
+      console.error('Error forcefully creating exam:', error);
       throw new BadRequestException(error.message);
     }
   }
