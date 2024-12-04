@@ -1,211 +1,238 @@
 /* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable prettier/prettier */
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Materii, Prisma } from '@prisma/client';
+import { randomUUID } from 'crypto';
+import { GroupedMateriiType } from './types/grouped-materii.type';
+
+// Common types
+interface MateriiFilters {
+  specializationShortName?: string;
+  studyYear?: string;
+  groupName?: string;
+  facultyName?: string;
+}
+
+// Common include pattern for related entities
+const MATERII_INCLUDE = {
+  professors: true,
+  assistants: true,
+  grupa: true,
+  examene: true,
+} as const;
 
 @Injectable()
 export class MateriiService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  // Create a new subject
   async createMaterie(data: Prisma.MateriiCreateInput): Promise<Materii> {
     try {
-      return await this.prisma.materii.create({ data });
+      return await this.prisma.materii.create({
+        data,
+        include: MATERII_INCLUDE,
+      });
     } catch (error) {
       if (error.code === 'P2002') {
         throw new BadRequestException(
-          'A subject with this name already exists.',
+          'A subject with this name already exists',
         );
       }
-      throw new BadRequestException('Failed to create subject.');
+      throw new BadRequestException('Failed to create subject');
     }
   }
 
-  // Get all subjects
   async getAllMaterii(): Promise<Materii[]> {
-    return this.prisma.materii.findMany({
-      include: {
-        professors: true,
-        assistants: true,
-        grupa: true,
-        examene: true,
-      },
-    });
+    try {
+      return await this.prisma.materii.findMany({
+        include: MATERII_INCLUDE,
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to fetch subjects');
+    }
   }
 
-  // Get a subject by ID
   async getMaterieById(id: string): Promise<Materii> {
+    if (!id) {
+      throw new BadRequestException('Subject ID is required');
+    }
+
     const materie = await this.prisma.materii.findUnique({
       where: { id_materie: id },
-      include: {
-        professors: true,
-        assistants: true,
-        grupa: true,
-        examene: true,
-      },
+      include: MATERII_INCLUDE,
     });
 
     if (!materie) {
-      throw new NotFoundException(`Subject with ID ${id} not found.`);
+      throw new NotFoundException(`Subject with ID ${id} not found`);
     }
 
     return materie;
   }
 
-  // Update a subject
   async updateMaterie(
     id: string,
     data: Prisma.MateriiUpdateInput,
   ): Promise<Materii> {
+    if (!id) {
+      throw new BadRequestException('Subject ID is required');
+    }
+
     try {
       return await this.prisma.materii.update({
         where: { id_materie: id },
         data,
-        include: {
-          professors: true,
-          assistants: true,
-          grupa: true,
-          examene: true,
-        },
+        include: MATERII_INCLUDE,
       });
     } catch (error) {
       if (error.code === 'P2025') {
-        throw new NotFoundException(`Subject with ID ${id} not found.`);
+        throw new NotFoundException(`Subject with ID ${id} not found`);
       }
-      throw new BadRequestException('Failed to update subject.');
+      throw new BadRequestException('Failed to update subject');
     }
   }
 
-  // Delete a subject
   async deleteMaterie(id: string): Promise<Materii> {
+    if (!id) {
+      throw new BadRequestException('Subject ID is required');
+    }
+
     try {
       return await this.prisma.materii.delete({
         where: { id_materie: id },
+        include: MATERII_INCLUDE,
       });
     } catch (error) {
       if (error.code === 'P2025') {
-        throw new NotFoundException(`Subject with ID ${id} not found.`);
+        throw new NotFoundException(`Subject with ID ${id} not found`);
       }
-      throw new BadRequestException('Failed to delete subject.');
+      throw new BadRequestException('Failed to delete subject');
     }
   }
 
-  // Advanced filtering
-  async filterMaterii(filters: {
-    specializationShortName?: string;
-    studyYear?: string;
-    groupName?: string;
-    facultyName?: string;
-  }): Promise<Materii[]> {
-    return this.prisma.materii.findMany({
-      where: {
+  async filterMaterii(filters: MateriiFilters): Promise<Materii[]> {
+    try {
+      const where: Prisma.MateriiWhereInput = {
         specializationShortName: filters.specializationShortName,
         studyYear: filters.studyYear,
         groupName: filters.groupName,
-        professors: filters.facultyName
-          ? { some: { facultyName: filters.facultyName } }
-          : undefined,
-      },
-      include: {
-        professors: true,
-        assistants: true,
-        grupa: true,
-        examene: true,
-      },
-    });
-  }
+        ...(filters.facultyName && {
+          professors: {
+            some: { facultyName: filters.facultyName },
+          },
+        }),
+      };
 
-  // Force add a subject
-  async forceAddMaterie(data: Partial<Materii>): Promise<Materii> {
-    if (!data.nume_materie) {
-      throw new BadRequestException('Subject name is required.');
-    }
-
-    return this.prisma.materii.create({
-      data: {
-        id_materie: crypto.randomUUID(),
-        nume_materie: data.nume_materie,
-        specializationShortName: data.specializationShortName,
-        studyYear: data.studyYear,
-        groupName: data.groupName,
-      },
-    });
-  }
-
-  // Export grouped by specialization
-  async exportMateriiGroupedBySpecialization() {
-    const materii = await this.prisma.materii.findMany({
-      include: {
-        professors: true,
-        assistants: true,
-        examene: true,
-        grupa: true,
-      },
-      orderBy: { specializationShortName: 'asc' },
-    });
-
-    return materii.reduce((grouped, materie) => {
-      const spec = materie.specializationShortName || 'Unassigned';
-
-      if (!grouped[spec]) {
-        grouped[spec] = [];
-      }
-
-      grouped[spec].push({
-        id: materie.id_materie,
-        name: materie.nume_materie,
-        studyYear: materie.studyYear,
-        groupName: materie.groupName,
-        professors: materie.professors.map(
-          (prof) => `${prof.firstName} ${prof.lastName}`,
-        ),
-        assistants: materie.assistants.map(
-          (asst) => `${asst.firstName} ${asst.lastName}`,
-        ),
-        examsCount: materie.examene.length,
+      return await this.prisma.materii.findMany({
+        where,
+        include: MATERII_INCLUDE,
       });
-
-      return grouped;
-    }, {});
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to filter subjects');
+    }
   }
 
-  // Add professors to a subject
   async addProfessorsToMaterie(
     id: string,
     professorIds: string[],
   ): Promise<Materii> {
-    return this.prisma.materii.update({
-      where: { id_materie: id },
-      data: {
-        professors: {
-          connect: professorIds.map((profId) => ({ id_profesor: profId })),
+    if (!id || !professorIds?.length) {
+      throw new BadRequestException(
+        'Subject ID and at least one professor ID are required',
+      );
+    }
+
+    try {
+      return await this.prisma.materii.update({
+        where: { id_materie: id },
+        data: {
+          professors: {
+            connect: professorIds.map((profId) => ({ id_profesor: profId })),
+          },
         },
-      },
-      include: {
-        professors: true,
-      },
-    });
+        include: MATERII_INCLUDE,
+      });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException(`Subject with ID ${id} not found`);
+      }
+      throw new BadRequestException('Failed to add professors to subject');
+    }
   }
 
-  // Add assistants to a subject
   async addAssistantsToMaterie(
     id: string,
     assistantIds: string[],
   ): Promise<Materii> {
-    return this.prisma.materii.update({
-      where: { id_materie: id },
-      data: {
-        assistants: {
-          connect: assistantIds.map((assistId) => ({ id_profesor: assistId })),
+    if (!id || !assistantIds?.length) {
+      throw new BadRequestException(
+        'Subject ID and at least one assistant ID are required',
+      );
+    }
+
+    try {
+      return await this.prisma.materii.update({
+        where: { id_materie: id },
+        data: {
+          assistants: {
+            connect: assistantIds.map((assistId) => ({
+              id_profesor: assistId,
+            })),
+          },
         },
-      },
-      include: {
-        assistants: true,
-      },
-    });
+        include: MATERII_INCLUDE,
+      });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException(`Subject with ID ${id} not found`);
+      }
+      throw new BadRequestException('Failed to add assistants to subject');
+    }
+  }
+
+  async exportMateriiGroupedBySpecialization(): Promise<GroupedMateriiType> {
+    try {
+      const materii = await this.prisma.materii.findMany({
+        include: MATERII_INCLUDE,
+        orderBy: { specializationShortName: 'asc' },
+      });
+
+      return materii.reduce((grouped, materie) => {
+        const spec = materie.specializationShortName || 'Unassigned';
+
+        if (!grouped[spec]) {
+          grouped[spec] = [];
+        }
+
+        grouped[spec].push({
+          id: materie.id_materie,
+          name: materie.nume_materie,
+          studyYear: materie.studyYear,
+          groupName: materie.groupName,
+          professors: materie.professors.map((prof) =>
+            prof.firstName && prof.lastName
+              ? `${prof.firstName} ${prof.lastName}`
+              : prof.id_profesor,
+          ),
+          assistants: materie.assistants.map((asst) =>
+            asst.firstName && asst.lastName
+              ? `${asst.firstName} ${asst.lastName}`
+              : asst.id_profesor,
+          ),
+          examsCount: materie.examene.length,
+        });
+
+        return grouped;
+      }, {} as GroupedMateriiType);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to export subjects grouped by specialization',
+      );
+    }
   }
 }
