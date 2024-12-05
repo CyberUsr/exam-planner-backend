@@ -36,6 +36,8 @@ model Profesori {
   cereriLegatura   CereriLegatura[]
   examene_as_professor Examene[] @relation("ProfessorToExamene")
   examene_as_assistant Examene[] @relation("AssistantToExamene")
+  materii_as_professor Materii[] @relation("ProfessorToMaterii")
+  materii_as_assistant Materii[] @relation("AssistantToMaterii")
 }
 
 model Departamente {
@@ -101,7 +103,15 @@ model Examene {
    grupa        Grupe?     @relation(fields: [id_grupa], references: [id])
    @@index([id_grupa]) // Ensure efficient lookups by id_grupa
 }
+model Materii {
+  id_materie     String   @id @default(uuid())
+  nume_materie   String   @unique
+  
+  professors   Profesori[] @relation("ProfessorToMaterii")
+  assistants   Profesori[] @relation("AssistantToMaterii")
+ 
 
+}
 model Grupe {
   id                       String  @id @default(uuid())
   type                     String
