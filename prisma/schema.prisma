@@ -107,6 +107,7 @@ model Examene {
   grupa        Grupe?      @relation(fields: [id_grupa], references: [id])  // Added this line
   id_grupa     String?     // Added this line to match the relation
 
+
   @@index([id_materie])
   @@index([id_grupa])  // Added index for the new field
 }

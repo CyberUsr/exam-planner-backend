@@ -42,37 +42,67 @@ export class ExameneService {
     return exam;
   }
 
-  // Create a new exam
   async createExam(data: {
     id_materie: string;
-    data: string; // ISO format for combined date and time
-    ora: string; // Time format
+    data: string; // Date part (YYYY-MM-DD)
+    ora: string; // Time part (HH:mm:ss)
     tip_evaluare: string;
     actualizatDe: string;
-    id_grupa?: string;
-    ExameneSali?: { id_sala: string }[]; // Array of room IDs
+    professors: string[]; // List of professor IDs
+    assistants: string[]; // List of assistant IDs
   }): Promise<Examene> {
-    const combinedDateTime = new Date(data.data);
+    try {
+      // Combine and validate date and time
+      const combinedDateTime = new Date(`${data.data}T${data.ora}`);
+      if (isNaN(combinedDateTime.getTime())) {
+        throw new BadRequestException('Invalid date or time format.');
+      }
 
-    if (isNaN(combinedDateTime.getTime())) {
-      throw new BadRequestException('Invalid date provided.');
-    }
-
-    return this.prisma.examene.create({
-      data: {
-        id_examene: crypto.randomUUID(),
-        id_materie: data.id_materie,
-        data: combinedDateTime,
-        ora: new Date(`${data.data}T${data.ora}`),
-        tip_evaluare: data.tip_evaluare,
-        actualizatDe: data.actualizatDe,
-        actualizatLa: new Date(),
-        id_grupa: data.id_grupa || null,
-        ExameneSali: {
-          create: data.ExameneSali?.map((sala) => ({ id_sala: sala.id_sala })) || [],
+      // Create the exam in the database
+      const exam = await this.prisma.examene.create({
+        data: {
+          id_examene: crypto.randomUUID(),
+          id_materie: data.id_materie,
+          data: combinedDateTime, // Use the combined date and time
+          ora: combinedDateTime, // Prisma expects a valid Date object
+          tip_evaluare: data.tip_evaluare,
+          actualizatDe: data.actualizatDe,
+          actualizatLa: new Date(), // Current timestamp
+          ExameneSali: {
+            create: [], // Handle ExameneSali if needed
+          },
         },
-      },
-    });
+      });
+
+      // Associate professors with the `Materii` record
+      for (const professorId of data.professors) {
+        await this.prisma.profesori.update({
+          where: { id_profesor: professorId },
+          data: {
+            examene_as_professor: {
+              connect: { id_materie: data.id_materie }, // Link to `id_materie` instead of `id_examene`
+            },
+          },
+        });
+      }
+
+      // Associate assistants with the `Materii` record
+      for (const assistantId of data.assistants) {
+        await this.prisma.profesori.update({
+          where: { id_profesor: assistantId },
+          data: {
+            examene_as_assistant: {
+              connect: { id_materie: data.id_materie }, // Link to `id_materie` instead of `id_examene`
+            },
+          },
+        });
+      }
+
+      return exam;
+    } catch (error) {
+      console.error('Error creating exam:', error);
+      throw new BadRequestException(`Failed to create exam: ${error.message}`);
+    }
   }
 
   // Update an exam
@@ -147,22 +177,21 @@ export class ExameneService {
 
   // Check availability of a professor or assistant
   async checkAvailability(professorId: string, date: Date, time: string) {
-    const combinedDateTime = new Date(`${date.toISOString().split('T')[0]}T${time}`);
-  
+    const combinedDateTime = new Date(
+      `${date.toISOString().split('T')[0]}T${time}`,
+    );
+
     if (isNaN(combinedDateTime.getTime())) {
       throw new BadRequestException('Invalid date or time provided.');
     }
-  
+
     // Remove the id_profesor filter
     const conflicts = await this.prisma.examene.findMany({
       where: {
-        AND: [
-          { data: date },
-          { ora: combinedDateTime },
-        ],
+        AND: [{ data: date }, { ora: combinedDateTime }],
       },
     });
-  
+
     return conflicts.length === 0;
   }
   // Find materie by name
@@ -172,33 +201,34 @@ export class ExameneService {
     });
 
     if (!materie) {
-      throw new NotFoundException(`Materie with name '${nume_materie}' not found.`);
+      throw new NotFoundException(
+        `Materie with name '${nume_materie}' not found.`,
+      );
     }
     return materie;
   }
-
 
   // Filter exams by faculty
   async filterExamsByFaculty(specializationShortName: string) {
     if (!specializationShortName) {
       throw new BadRequestException('Specialization short name is required.');
     }
-  
+
     return this.prisma.examene.findMany({
       where: {
         materie: {
           specializationShortName: specializationShortName, // Use the appropriate field
         },
       },
-      include: { 
-        materie: true, 
-        grupa: true, 
-        ExameneSali: { include: { sala: true } } 
+      include: {
+        materie: true,
+        grupa: true,
+        ExameneSali: { include: { sala: true } },
       },
       orderBy: { data: 'asc' },
     });
   }
-  
+
   // Export exams grouped by day
   async exportExamsGroupedByDay() {
     const exams = await this.prisma.examene.findMany({
@@ -211,20 +241,20 @@ export class ExameneService {
       },
       orderBy: { data: 'asc' },
     });
-  
+
     const groupedExams = exams.reduce((grouped, exam) => {
       const date = exam.data.toISOString().split('T')[0];
       if (!grouped[date]) grouped[date] = [];
-  
+
       grouped[date].push({
         id: exam.id_examene,
         subject: exam.materie.nume_materie, // Changed from 'nume'
         // ... rest of the code remains the same
       });
-  
+
       return grouped;
     }, {});
-  
+
     return groupedExams;
   }
   // Filter exams
@@ -252,19 +282,19 @@ export class ExameneService {
   async forceAddExam(data: {
     id_materie: string;
     data: string; // ISO format for combined date and time
-    ora: string;  // Time format
+    ora: string; // Time format
     tip_evaluare: string;
     actualizatDe: string;
     id_grupa?: string;
     ExameneSali?: { id_sala: string }[];
   }): Promise<Examene> {
     const combinedDateTime = new Date(data.data);
-  
+
     // Minimal validation to ensure dates and IDs are provided
     if (isNaN(combinedDateTime.getTime())) {
       throw new BadRequestException('Invalid date provided.');
     }
-  
+
     // Direct database insertion without checks
     return this.prisma.examene.create({
       data: {
@@ -277,10 +307,11 @@ export class ExameneService {
         actualizatLa: new Date(),
         id_grupa: data.id_grupa || null,
         ExameneSali: {
-          create: data.ExameneSali?.map((sala) => ({ id_sala: sala.id_sala })) || [],
+          create:
+            data.ExameneSali?.map((sala) => ({ id_sala: sala.id_sala })) || [],
         },
       },
     });
   }
-  
+  //survey
 }

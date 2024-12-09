@@ -45,7 +45,6 @@ export class ExameneController {
     return this.exameneService.getExamById(id_exam);
   }
 
-  // Create a new exam
   @Post()
   @ApiOperation({ summary: 'Create a new exam' })
   @ApiBody({
@@ -54,8 +53,8 @@ export class ExameneController {
       type: 'object',
       properties: {
         nume_materie: { type: 'string', example: 'Mathematics' },
-        data: { type: 'string', example: '2024-06-15T10:00:00Z' },
-        ora: { type: 'string', example: '10:00:00' },
+        data: { type: 'string', example: '2024-06-15' }, // Only date part
+        ora: { type: 'string', example: '10:00:00' }, // Only time part
         tip_evaluare: { type: 'string', example: 'Final' },
         actualizatDe: { type: 'string', example: 'admin' },
         professors: {
@@ -75,8 +74,8 @@ export class ExameneController {
     @Body()
     data: {
       nume_materie: string;
-      data: string; // ISO format
-      ora: string;
+      data: string; // Date in YYYY-MM-DD
+      ora: string; // Time in HH:mm:ss
       tip_evaluare: string;
       actualizatDe: string;
       professors: string[];
@@ -85,23 +84,25 @@ export class ExameneController {
   ) {
     try {
       // Step 1: Find id_materie by nume_materie
-      const materie = await this.exameneService.findMaterieByName(data.nume_materie);
+      const materie = await this.exameneService.findMaterieByName(
+        data.nume_materie,
+      );
       if (!materie) {
-        throw new BadRequestException(`Subject with name ${data.nume_materie} not found.`);
+        throw new BadRequestException(
+          `Subject with name ${data.nume_materie} not found.`,
+        );
       }
 
-      // Step 2: Construct the payload with id_materie
-      const payload = {
-        id_materie: materie.id_materie, // Map the found ID
+      // Step 2: Pass data to service with the found id_materie
+      return this.exameneService.createExam({
+        id_materie: materie.id_materie,
         data: data.data,
         ora: data.ora,
         tip_evaluare: data.tip_evaluare,
         actualizatDe: data.actualizatDe,
-        ExameneSali: [], // Optional, handle room associations if needed
-      };
-
-      // Step 3: Call the service method
-      return this.exameneService.createExam(payload);
+        professors: data.professors,
+        assistants: data.assistants,
+      });
     } catch (error) {
       throw new BadRequestException(`Error creating exam: ${error.message}`);
     }
@@ -204,7 +205,10 @@ export class ExameneController {
         id_grupa: { type: 'string', example: 'group1', nullable: true },
         ExameneSali: {
           type: 'array',
-          items: { type: 'object', properties: { id_sala: { type: 'string', example: 'sala1' } } },
+          items: {
+            type: 'object',
+            properties: { id_sala: { type: 'string', example: 'sala1' } },
+          },
         },
       },
     },
@@ -244,4 +248,6 @@ export class ExameneController {
       throw new BadRequestException(error.message);
     }
   }
+
+  //survey
 }
