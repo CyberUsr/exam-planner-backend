@@ -1,11 +1,41 @@
 /* eslint-disable prettier/prettier */
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Materii } from '@prisma/client'; // Import Materii type
 import axios from 'axios';
 
 @Injectable()
 export class MateriiService {
   constructor(private readonly prisma: PrismaService) {}
+
+  // Fetch all subjects
+  async getAllMaterii(): Promise<Materii[]> {
+    return this.prisma.materii.findMany({
+      include: {
+        professors: true,
+        assistants: true,
+        grupa: true,
+        examene: true,
+      },
+    });
+  }
+
+  // Fetch subjects for a specific teacher
+  async getMateriiForTeacher(teacherId: string): Promise<Materii[]> {
+    return this.prisma.materii.findMany({
+      where: {
+        professors: {
+          some: { id_profesor: teacherId },
+        },
+      },
+      include: {
+        professors: true,
+        assistants: true,
+        grupa: true,
+        examene: true,
+      },
+    });
+  }
 
   async importMateriiFromEndpoint(): Promise<void> {
     try {
