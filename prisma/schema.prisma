@@ -36,6 +36,8 @@ model Profesori {
   cereriLegatura   CereriLegatura[]
   examene_as_professor Materii[] @relation("ProfessorToExamene")
   examene_as_assistant Materii[] @relation("AssistantToExamene")
+
+  schedules        Schedule[]    @relation("ProfesoriToSchedule")
 }
 
 model Departamente {
@@ -92,7 +94,7 @@ model Materii {
   students       Studenti[]  @relation("StudentToMaterii")
   examene        Examene[]
   grupa          Grupe?      @relation(fields: [id_grupa], references: [id])
-
+schedules      Schedule[]  @relation("MateriiToSchedule") // Added relation to Schedule
   @@index([id_grupa])
 }
 
@@ -127,6 +129,7 @@ model Grupe {
 
   Examene     Examene[]
   Materii     Materii[]
+  schedules   Schedule[]  @relation("GrupeToSchedule")
 }
 
 model ExameneSali {
@@ -136,6 +139,29 @@ model ExameneSali {
   examene         Examene    @relation(fields: [id_examene], references: [id_examene])
   sala            Sali       @relation(fields: [id_sala], references: [id_sala])
   Cereri          Cereri[]
+}
+
+
+model Schedule {
+  id               String     @id @default(uuid())
+  type             String     // e.g., "lab", "curs"
+  teacherId        String
+  roomId           String
+  roomBuilding     String
+  roomName         String
+  weekDay          Int        // e.g., 1 for Monday, 2 for Tuesday
+  startHour        Int        // Start time in minutes from 00:00 (e.g., 480 for 08:00)
+  duration         Int        // Duration in minutes
+  parity           String     // e.g., "-", "odd", "even"
+  otherInfo        String?
+  materieId        String
+  groupId          String
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  Materii          Materii    @relation("MateriiToSchedule", fields: [materieId], references: [id_materie])
+  Grupe            Grupe      @relation("GrupeToSchedule", fields: [groupId], references: [id])
+  Profesori        Profesori  @relation("ProfesoriToSchedule", fields: [teacherId], references: [id_profesor])
 }
 
 model CereriLegatura {

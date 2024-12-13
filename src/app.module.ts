@@ -11,9 +11,23 @@ import { CererilegaturaModule } from './cererilegatura/cererilegatura.module';
 import { AuthModule } from './auth/auth.module';
 import { GrupeModule } from './grupe/grupe.module';
 import { MateriiModule } from './materii/materii.module';
-
+import { ScheduleModule } from './schedule/schedule.module';
 
 @Module({
-  imports: [PrismaModule, ProfesoriModule, StudentiModule, SaliModule, ExameneModule, DepartamenteModule, CereriModule, ExamenesaliModule, CererilegaturaModule, AuthModule, GrupeModule, MateriiModule],
+  imports: [
+    PrismaModule,
+    ProfesoriModule,
+    StudentiModule,
+    SaliModule,
+    ExameneModule,
+    DepartamenteModule,
+    CereriModule,
+    ExamenesaliModule,
+    CererilegaturaModule,
+    AuthModule,
+    GrupeModule,
+    MateriiModule,
+    ScheduleModule,
+  ],
 })
 export class AppModule {}
