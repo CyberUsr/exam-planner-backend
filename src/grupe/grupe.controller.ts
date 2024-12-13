@@ -1,8 +1,16 @@
-import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+} from '@nestjs/common';
 import { GrupeService } from './grupe.service';
 import { Grupe } from '@prisma/client';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
-import axios from 'axios';
 
 @ApiTags('Grupe')
 @Controller('grupe')
@@ -80,9 +88,19 @@ export class GrupeController {
   }
 
   // Populate the Grupe table with data from the external API
-  
+
   @Post('populate')
   async populateGrupe() {
     return this.grupeService.populateGrupe();
+  }
+  @Post('populate/:facultyId')
+  @ApiOperation({ summary: 'Populate Grupe records by faculty ID' })
+  @ApiParam({
+    name: 'facultyId',
+    type: String,
+    description: 'The ID of the faculty to filter groups',
+  })
+  async populateGrupeByFaculty(@Param('facultyId') facultyId: string) {
+    return this.grupeService.populateGrupeByFaculty(facultyId);
   }
 }

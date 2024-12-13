@@ -137,4 +137,74 @@ export class GrupeService {
       throw new Error('Failed to populate Grupe table.');
     }
   }
+
+  async populateGrupeByFaculty(facultyId: string): Promise<string> {
+    const url = 'https://orar.usv.ro/orar/vizualizare/data/subgrupe.php?json';
+
+    try {
+      const response = await axios.get(url);
+      const data = response.data;
+
+      for (const item of data) {
+        const {
+          id,
+          type,
+          facultyId: itemFacultyId,
+          specializationShortName,
+          studyYear,
+          groupName,
+          subgroupIndex,
+          isModular,
+          orarId,
+        } = item;
+
+        // Skip if the group's faculty ID does not match the given faculty ID
+        if (itemFacultyId !== facultyId) continue;
+
+        // Skip invalid records
+        if (
+          !id ||
+          !type ||
+          !itemFacultyId ||
+          !specializationShortName ||
+          !studyYear ||
+          !orarId
+        ) {
+          console.warn('Skipping invalid record:', item);
+          continue;
+        }
+
+        // Sanitize data to match Prisma schema
+        const sanitizedData = {
+          id: id.toString(),
+          type: type.toString(),
+          facultyId: itemFacultyId.toString(),
+          specializationShortName: specializationShortName.toString(),
+          studyYear: studyYear.toString(),
+          groupName:
+            groupName && groupName !== '_' ? groupName.toString() : null,
+          subgroupIndex: subgroupIndex ? subgroupIndex.toString() : null,
+          isModular: isModular.toString(),
+          orarId: orarId.toString(),
+        };
+
+        // Debug: log sanitized data
+        console.log('Processing record:', sanitizedData);
+
+        // Insert or update the record in the database
+        await this.prisma.grupe.upsert({
+          where: { id: sanitizedData.id },
+          update: sanitizedData,
+          create: sanitizedData,
+        });
+      }
+
+      return `Grupe table populated successfully for faculty ID: ${facultyId}.`;
+    } catch (error) {
+      console.error('Error populating Grupe table by faculty:', error);
+      throw new Error(
+        `Failed to populate Grupe table for faculty ID: ${facultyId}.`,
+      );
+    }
+  }
 }
