@@ -84,4 +84,15 @@ export class ProfesoriController {
   async deleteProfesor(@Param('id') id_profesor: string) {
     return this.profesoriService.deleteProfesor(id_profesor);
   }
+
+  @Get('populate/:facultyName')
+  @ApiOperation({ summary: 'Populate professors from a specific faculty' })
+  @ApiParam({
+    name: 'facultyName',
+    type: String,
+    description: 'Name of the faculty',
+  })
+  async populateProfesoriByFaculty(@Param('facultyName') facultyName: string) {
+    return this.profesoriService.populateProfesoriByFaculty(facultyName);
+  }
 }
