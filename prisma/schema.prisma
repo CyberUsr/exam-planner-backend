@@ -72,12 +72,13 @@ model Sali {
 model Cereri {
   id_cerere      String   @id @default(uuid())
   id_user        String
-  id_examene_sali String
+ //id_examene_sali String
+  id_materie String
   data           DateTime
   ora            DateTime
   status         String @default("Pending")
 
-  ExameneSali    ExameneSali @relation(fields: [id_examene_sali], references: [id_examene_sali])
+  ExameneSali    ExameneSali []
   CereriLegatura CereriLegatura[]
 }
 
@@ -108,7 +109,7 @@ model Examene {
   actualizatLa DateTime
 
   ExameneSali  ExameneSali[]
-  materie      Materii     @relation(fields: [id_materie], references: [id_materie])
+  materie      Materii?     @relation(fields: [id_materie], references: [id_materie])
   grupa        Grupe?      @relation(fields: [id_grupa], references: [id])
   id_grupa     String?
 

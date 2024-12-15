@@ -195,18 +195,7 @@ export class ExameneService {
     return conflicts.length === 0;
   }
   // Find materie by name
-  async findMaterieByName(nume_materie: string) {
-    const materie = await this.prisma.materii.findUnique({
-      where: { nume_materie },
-    });
-
-    if (!materie) {
-      throw new NotFoundException(
-        `Materie with name '${nume_materie}' not found.`,
-      );
-    }
-    return materie;
-  }
+ 
 
   // Filter exams by faculty
   async filterExamsByFaculty(specializationShortName: string) {
@@ -257,6 +246,23 @@ export class ExameneService {
 
     return groupedExams;
   }
+  // Find materie by name
+async findMaterieByName(nume_materie: string) {
+  if (!nume_materie || typeof nume_materie !== 'string') {
+    throw new Error('nume_materie is required and must be a string');
+  }
+
+  const materie = await this.prisma.materii.findUnique({
+    where: { nume_materie },
+  });
+
+  if (!materie) {
+    throw new Error(`Materie with name "${nume_materie}" not found`);
+  }
+
+  return materie;
+}
+
   // Filter exams
   async filterExams(specialization: string, year: string, group: string) {
     if (!specialization || !year || !group) {
@@ -313,5 +319,23 @@ export class ExameneService {
       },
     });
   }
-  //survey
+  // Find materie by ID
+async findMaterieById(id_materie: string) {
+  if (!id_materie || typeof id_materie !== 'string') {
+    throw new BadRequestException('id_materie is required and must be a string.');
+  }
+
+  const materie = await this.prisma.materii.findUnique({
+    where: { id_materie },
+  });
+
+  if (!materie) {
+    throw new NotFoundException(`Materie with ID "${id_materie}" not found.`);
+  }
+
+  return materie;
+}
+
+
+  
 }
