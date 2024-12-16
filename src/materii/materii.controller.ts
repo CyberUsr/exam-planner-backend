@@ -2,8 +2,10 @@
 import {
   Controller,
   Get,
+  HttpCode,
   HttpException,
   HttpStatus,
+  NotFoundException,
   Param,
 } from '@nestjs/common';
 import { MateriiService } from './materii.service';
@@ -59,6 +61,16 @@ export class MateriiController {
         `Failed to import Materii: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  @Get(':id')
+  async findById(@Param('id') id: string) {
+    console.log('Received subject ID:', id);
+    try {
+      return await this.materiiService.findMaterieById(id);
+    } catch (error) {
+      throw new NotFoundException(`Subject with ID ${id} not found`);
     }
   }
 }

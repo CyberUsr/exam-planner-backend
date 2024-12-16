@@ -105,7 +105,7 @@ model Examene {
   data         DateTime
   ora          DateTime
   tip_evaluare String
-  actualizatDe String
+  actualizatDe String?
   actualizatLa DateTime
 
   ExameneSali  ExameneSali[]

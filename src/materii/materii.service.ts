@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Materii } from '@prisma/client'; // Import Materii type
 import axios from 'axios';
@@ -110,4 +110,22 @@ export class MateriiService {
       );
     }
   }
+  async findMaterieById(id_materie: string) {
+    // Log all existing subject IDs for comparison
+    const allSubjects = await this.prisma.materii.findMany({
+      select: { id_materie: true, nume_materie: true }
+    });
+    console.log('All subject IDs:', allSubjects);
+  
+    const materie = await this.prisma.materii.findUnique({
+      where: { id_materie },
+    });
+  
+    if (!materie) {
+      throw new NotFoundException(`No subject found with ID "${id_materie}"`);
+    }
+  
+    return materie;
+  }
+  
 }

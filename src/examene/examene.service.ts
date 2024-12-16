@@ -41,69 +41,51 @@ export class ExameneService {
     }
     return exam;
   }
-
   async createExam(data: {
     id_materie: string;
-    data: string; // Date part (YYYY-MM-DD)
-    ora: string; // Time part (HH:mm:ss)
+    data: string;
+    ora: string;
     tip_evaluare: string;
     actualizatDe: string;
-    professors: string[]; // List of professor IDs
-    assistants: string[]; // List of assistant IDs
-  }): Promise<Examene> {
+    professors: string[];
+    assistants: string[];
+}): Promise<Examene> {
     try {
-      // Combine and validate date and time
-      const combinedDateTime = new Date(`${data.data}T${data.ora}`);
-      if (isNaN(combinedDateTime.getTime())) {
-        throw new BadRequestException('Invalid date or time format.');
-      }
+        const combinedDateTime = new Date(`${data.data}T${data.ora}`);
+        if (isNaN(combinedDateTime.getTime())) {
+            throw new BadRequestException('Invalid date or time format.');
+        }
 
-      // Create the exam in the database
-      const exam = await this.prisma.examene.create({
-        data: {
-          id_examene: crypto.randomUUID(),
-          id_materie: data.id_materie,
-          data: combinedDateTime, // Use the combined date and time
-          ora: combinedDateTime, // Prisma expects a valid Date object
-          tip_evaluare: data.tip_evaluare,
-          actualizatDe: data.actualizatDe,
-          actualizatLa: new Date(), // Current timestamp
-          ExameneSali: {
-            create: [], // Handle ExameneSali if needed
-          },
-        },
-      });
-
-      // Associate professors with the `Materii` record
-      for (const professorId of data.professors) {
-        await this.prisma.profesori.update({
-          where: { id_profesor: professorId },
-          data: {
-            examene_as_professor: {
-              connect: { id_materie: data.id_materie }, // Link to `id_materie` instead of `id_examene`
-            },
-          },
+        // Ensure materie exists
+        const materieExists = await this.prisma.materii.findUnique({
+            where: { id_materie: data.id_materie },
         });
-      }
+        if (!materieExists) {
+            throw new BadRequestException(`Materie with ID ${data.id_materie} not found.`);
+        }
 
-      // Associate assistants with the `Materii` record
-      for (const assistantId of data.assistants) {
-        await this.prisma.profesori.update({
-          where: { id_profesor: assistantId },
-          data: {
-            examene_as_assistant: {
-              connect: { id_materie: data.id_materie }, // Link to `id_materie` instead of `id_examene`
+        // Create the exam
+        const exam = await this.prisma.examene.create({
+            data: {
+                id_examene: crypto.randomUUID(),
+                id_materie: data.id_materie,
+                data: combinedDateTime,
+                ora: combinedDateTime,
+                tip_evaluare: data.tip_evaluare,
+                actualizatDe: data.actualizatDe,
+                actualizatLa: new Date(),
+                ExameneSali: { create: [] },
             },
-          },
         });
-      }
 
-      return exam;
+        
+        return exam;
     } catch (error) {
-      console.error('Error creating exam:', error);
-      throw new BadRequestException(`Failed to create exam: ${error.message}`);
+        console.error('Error creating exam:', error);
+        throw new BadRequestException(`Failed to create exam: ${error.message}`);
     }
-  }
+}
+
 
   // Update an exam
   async updateExam(
@@ -319,7 +301,7 @@ async findMaterieByName(nume_materie: string) {
       },
     });
   }
-  // Find materie by ID
+   // Find materie by ID
 async findMaterieById(id_materie: string) {
   if (!id_materie || typeof id_materie !== 'string') {
     throw new BadRequestException('id_materie is required and must be a string.');
