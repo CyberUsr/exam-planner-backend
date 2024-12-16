@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { ProfesoriModule } from './profesori/profesori.module';
 import { PrismaModule } from './prisma/prisma.module';
