@@ -143,6 +143,7 @@ export class ProfesoriService {
           id,
           lastName,
           firstName,
+          emailAddress,
           facultyName: itemFacultyName,
           departmentName,
         } = item;
@@ -172,7 +173,7 @@ export class ProfesoriService {
           update: {
             lastName: lastName.trim(),
             firstName: firstName.trim(),
-            emailAddress: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+            emailAddress: emailAddress.trim(), // Use emailAddress from API,
             idDepartament: department.idDepartament,
             facultyName: itemFacultyName || null,
             departmentName: departmentName || null,
@@ -181,7 +182,7 @@ export class ProfesoriService {
             id_profesor: id,
             lastName: lastName.trim(),
             firstName: firstName.trim(),
-            emailAddress: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+            emailAddress: emailAddress.trim(), // Use emailAddress from API,
             idDepartament: department.idDepartament,
             facultyName: itemFacultyName || null,
             departmentName: departmentName || null,

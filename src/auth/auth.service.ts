@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client'; // Import the generated Role enum
+import { Profesori } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -17,14 +18,23 @@ export class AuthService {
 
     // Automatically determine the role based on the email domain
     let role: Role = Role.Student; // Default role
-    if (email.endsWith('@usm.ro')) {
-      role = Role.Profesor;
-    } else if (email.endsWith('@secretariat.usm.ro')) {
+
+     // Check if the email exists in the Profesori table
+     const profesor = await this.prisma.profesori.findFirst({
+      where: { emailAddress: email }
+    });
+  // If a matching profesor is found, assign Profesor role
+  if (profesor) {
+    role = Role.Profesor;
+  } else {
+    // Additional role checks can be added here if needed
+    // For example, checking other specific tables or email domains
+    if (email.endsWith('@secretariat.usm.ro')) {
       role = Role.Secretariat;
     } else if (email.endsWith('@admin.usm.ro')) {
-      role = Role.Admin; // Special case for admin
+      role = Role.Admin;
     }
-
+  }
     const user = await this.prisma.user.create({
       data: { email, password: hashedPassword, role },
     });
