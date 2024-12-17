@@ -1,6 +1,5 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable prettier/prettier */
 import {
   Injectable,
   NotFoundException,
@@ -83,9 +82,16 @@ export class ProfesoriService {
       const departments = await this.prisma.departamente.findMany();
 
       for (const item of data) {
-        const { id, lastName, firstName, facultyName, departmentName } = item;
+        const {
+          id,
+          lastName,
+          firstName,
+          emailAddress,
+          facultyName,
+          departmentName,
+        } = item;
 
-        if (!id || !lastName || !firstName) continue;
+        if (!id || !lastName || !firstName || !emailAddress) continue;
 
         // Find the department that matches the faculty name
         const department = departments.find(
@@ -104,19 +110,19 @@ export class ProfesoriService {
           update: {
             lastName: lastName.trim(),
             firstName: firstName.trim(),
-            emailAddress: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+            emailAddress: emailAddress.trim(), // Use emailAddress from API
             idDepartament: department.idDepartament,
-            facultyName: facultyName || null, // Add facultyName, use null if not provided
-            departmentName: departmentName || null, // Add facultyName, use null if not provided
+            facultyName: facultyName || null,
+            departmentName: departmentName || null,
           },
           create: {
             id_profesor: id,
             lastName: lastName.trim(),
             firstName: firstName.trim(),
-            emailAddress: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+            emailAddress: emailAddress.trim(), // Use emailAddress from API
             idDepartament: department.idDepartament,
-            facultyName: facultyName || null, // Add facultyName, use null if not provided
-            departmentName: departmentName || null, // Add facultyName, use null if not provided
+            facultyName: facultyName || null,
+            departmentName: departmentName || null,
           },
         });
       }
@@ -143,6 +149,7 @@ export class ProfesoriService {
           id,
           lastName,
           firstName,
+          emailAddress,
           facultyName: itemFacultyName,
           departmentName,
         } = item;
@@ -150,7 +157,7 @@ export class ProfesoriService {
         // Skip if the teacher's faculty does not match the given faculty name
         if (itemFacultyName !== facultyName) continue;
 
-        if (!id || !lastName || !firstName) continue;
+        if (!id || !lastName || !firstName || !emailAddress) continue;
 
         // Find the corresponding department
         const department = departments.find(
@@ -172,7 +179,7 @@ export class ProfesoriService {
           update: {
             lastName: lastName.trim(),
             firstName: firstName.trim(),
-            emailAddress: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+            emailAddress: emailAddress.trim(), // Use emailAddress from API
             idDepartament: department.idDepartament,
             facultyName: itemFacultyName || null,
             departmentName: departmentName || null,
@@ -181,7 +188,7 @@ export class ProfesoriService {
             id_profesor: id,
             lastName: lastName.trim(),
             firstName: firstName.trim(),
-            emailAddress: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+            emailAddress: emailAddress.trim(), // Use emailAddress from API
             idDepartament: department.idDepartament,
             facultyName: itemFacultyName || null,
             departmentName: departmentName || null,

@@ -17,12 +17,23 @@ export class AuthService {
 
     // Automatically determine the role based on the email domain
     let role: Role = Role.Student; // Default role
-    if (email.endsWith('@usm.ro')) {
+
+    // Check for professor roles
+    const professorDomains = [
+      '@usm.ro',
+      '@usv.ro',
+      '@eed.usv.ro',
+      '@assist.ro',
+    ];
+    const secretariatDomains = ['@secretariat.usm.ro'];
+    const adminDomains = ['@admin.usm.ro'];
+
+    if (professorDomains.some((domain) => email.endsWith(domain))) {
       role = Role.Profesor;
-    } else if (email.endsWith('@secretariat.usm.ro')) {
+    } else if (secretariatDomains.some((domain) => email.endsWith(domain))) {
       role = Role.Secretariat;
-    } else if (email.endsWith('@admin.usm.ro')) {
-      role = Role.Admin; // Special case for admin
+    } else if (adminDomains.some((domain) => email.endsWith(domain))) {
+      role = Role.Admin;
     }
 
     const user = await this.prisma.user.create({
