@@ -65,6 +65,15 @@ npm run test
 ```
 
 ---
+
+### **7. Back up Baza de date**
+In cazul in care se doreste sa se faca un back up bazei de date se poate utiliza un program de gestiune a db-urilor.
+Pentru acest proiect s-a folosit TablePlus iar pasii pentru realizare back up-ului se pot gasii in acest [site](https://tableplus.com/blog/2018/08/postgresql-how-to-backup-and-restore-database.html).
+
+---
+
+
+---
 ###**Varianta de instalare Doker-izata**
 
 Iată cum poți configura și instala aplicația folosind **Docker Compose** și **Tailscale**, conform informațiilor oferite:
