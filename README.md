@@ -46,8 +46,7 @@ Acest proiect folosește [Prisma](https://www.prisma.io/) pentru gestionarea baz
 4.Baza se doreste verificarea datelor din baza de date se aplica comanda:
   ```bash
    npx prisma studio
-   ```
-sau se instaleaza un program de gestiune a bazelor de date de ex [TablePlus](https://tableplus.com/download/).
+   ```sau se instaleaza un program de gestiune a bazelor de date de ex [TablePlus](https://tableplus.com/download/).
 ---
 
 ### 5. **Pornește Aplicația**
