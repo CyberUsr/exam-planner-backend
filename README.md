@@ -20,7 +20,7 @@ npm install
 ---
 
 ### 3. **Configurează Variabilele de Mediu**
-Creează un fișier `.env` în directorul principal și adaugă variabilele de mediu necesare.
+Creează un fișier `.env` în directorul principal și adaugă variabilele de mediu necesare.Mai jos este un exemplu:
 ```bash
 POSTGRES_USER=exemplu_nickname
 POSTGRES_PASSWORD=exemplu_parola
