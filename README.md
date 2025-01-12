@@ -43,10 +43,10 @@ Acest proiect folosește [Prisma](https://www.prisma.io/) pentru gestionarea baz
 ```bash
   docker compose up
    ```
-4.Baza se doreste verificarea datelor din baza de date se aplica comanda:
+4.Daca se doreste verificarea datelor din baza de date se aplica comanda de mai jos sau se instaleaza un program de gestiune a bazelor de date de ex [TablePlus](https://tableplus.com/download/).
   ```bash
    npx prisma studio
-   ```sau se instaleaza un program de gestiune a bazelor de date de ex [TablePlus](https://tableplus.com/download/).
+   ```
 ---
 
 ### 5. **Pornește Aplicația**
