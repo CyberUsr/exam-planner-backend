@@ -22,7 +22,7 @@ npm install
 ### 3. **Configurează Variabilele de Mediu**
 Creează un fișier `.env` în directorul principal și adaugă variabilele de mediu necesare.
 ```bash
-POSTGRES_USER=exwmoplu_nickname
+POSTGRES_USER=exemplu_nickname
 POSTGRES_PASSWORD=exemplu_parola
 POSTGRES_DB=exemplu_db
 POSTGRES_PORT=(ce_port_sa_folosesti)
@@ -39,7 +39,15 @@ Acest proiect folosește [Prisma](https://www.prisma.io/) pentru gestionarea baz
    npx prisma generate
    npx prisma migrate deploy
    ```
-
+3.Se instaleaza aplicatia [Doker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) si se lanseaza comanda
+```bash
+  docker compose up
+   ```
+4.Baza se doreste verificarea datelor din baza de date se aplica comanda:
+  ```bash
+   npx prisma studio
+   ```
+sau se instaleaza un program de gestiune a bazelor de date de ex [TablePlus](https://tableplus.com/download/).
 ---
 
 ### 5. **Pornește Aplicația**
@@ -55,6 +63,12 @@ Backend-ul ar trebui să ruleze acum, de obicei pe `http://localhost:3000`.
 Pentru a rula testele și a verifica dacă totul funcționează corect:  
 ```bash
 npm run test
+```
+
+---
+###**Varianta de instalare Doker-izata**
+
+```bash
 ```
 
 ---
