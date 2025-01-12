@@ -243,7 +243,6 @@ Pentru a accesa aplicația prin Tailscale:
 
 ---
 
-Acum aplicația ta este funcțională și poate fi accesată securizat prin rețeaua Tailscale. 🚀
 
 ---
 
